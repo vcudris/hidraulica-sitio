@@ -10,6 +10,7 @@ subtitle: "Todos corren en tu navegador: no instalas nada y no se envían datos 
 | Curva de energía específica | Curva $E$-$y$, tirante crítico, tirantes alternos y Froude de cada rama | U1 | [2](semanas/semana-02.qmd#simulador-curva-de-energía-específica) |
 | Tirante crítico y régimen | $y_c$ en cualquier sección, Froude en función del tirante, caso del colector circular al 60 % | U1 | [3](semanas/semana-03.qmd#simulador-tirante-crítico-y-régimen) |
 | Escalón y contracción | Paso por un escalón o un estrechamiento, estrangulamiento y represamiento aguas arriba | U1 | [4](semanas/semana-04.qmd#simulador-escalón-y-contracción-en-un-canal-de-laboratorio) |
+| Vista lateral del canal de laboratorio | Superficie del agua, línea de energía y tirante crítico sobre una joroba y un estrechamiento; sección de control y represamiento | U1 | [4](semanas/semana-04.qmd#simulador-vista-lateral-del-canal-de-laboratorio) |
 | Perfil de velocidad | Ley logarítmica, lecturas a 0,2, 0,6 y 0,8 del tirante, velocidad media | U1 | [5](semanas/semana-05.qmd#simulador-perfil-de-velocidad-en-una-vertical) |
 | Vertedero de aforo | Curvas de calibración de vertederos triangular y rectangular, sensibilidad a la lectura | U1 | [5](semanas/semana-05.qmd#simulador-vertedero-de-aforo) |
 | Tirante normal | Manning y Chezy en cuatro secciones, curva de descarga, pendiente suave o fuerte | U2 | [6](semanas/semana-06.qmd#simulador-tirante-normal) |

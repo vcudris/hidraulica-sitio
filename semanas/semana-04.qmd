@@ -127,6 +127,105 @@ resultados([
 2. Baja el tirante de llegada hasta que $Fr_1 > 1$ y repite. ¿Por qué ahora el agua sube sobre el escalón?
 3. Sin escalón, estrecha el canal. ¿Coincide el ancho que produce el choque con $b_{min}$ calculado a mano?
 
+## Simulador: vista lateral del canal de laboratorio
+
+Lo mismo que el simulador anterior, pero visto como en el canal del laboratorio: el agua pasa sobre una **joroba** suave en el fondo (de altura máxima $\Delta z$) y por un **estrechamiento** de las paredes (ancho mínimo $b_{min}$), ambos centrados en $x = 0$. En cada sección se aplica $E(x) = E_1 - z_b(x)$ con el caudal unitario $q(x) = Q/b(x)$, sin pérdidas.
+
+```{ojs}
+viewof vQ = Inputs.range([0.002, 0.08], {value: 0.02, step: 0.001, label: "Caudal Q (m³/s)"})
+viewof vb = Inputs.range([0.1, 0.6], {value: 0.3, step: 0.01, label: "Ancho del canal b (m)"})
+viewof vy = Inputs.range([0.01, 0.4], {value: 0.12, step: 0.001, label: "Tirante de llegada y₁ (m)"})
+viewof vdz = Inputs.range([0, 0.12], {value: 0.015, step: 0.001, label: "Altura de la joroba Δz (m)"})
+viewof vbmin = Inputs.range([0.05, 0.6], {value: 0.3, step: 0.01, label: "Ancho mínimo en el estrechamiento (m)"})
+```
+
+```{ojs}
+// Forma de la transición: coseno suave entre x = −0,5 m y x = 0,5 m.
+forma = (x) => Math.abs(x) < 0.5 ? 0.5 * (1 + Math.cos(Math.PI * x / 0.5)) : 0
+anchoX = (x) => vb - (vb - Math.min(vbmin, vb)) * forma(x)
+seccionX = (x) => ({forma: "rectangular", b: anchoX(x)})
+xsV = d3.range(0, 241).map((i) => -1.5 + 3 * i / 240)
+vsec = seccionX(-1.5)
+vE1 = energia(vsec, vQ, vy)
+vFr1 = froude(vsec, vQ, vy)
+vsub = vFr1 < 1
+// Energía mínima que necesita cada sección para dejar pasar el caudal (contada desde el fondo del canal).
+necesaria = xsV.map((x) => {
+  const s = seccionX(x), yc = tiranteCritico(s, vQ);
+  return {x, yc, zb: vdz * forma(x), req: vdz * forma(x) + 1.5 * yc};
+})
+control = necesaria.reduce((m, p) => p.req > m.req ? p : m)
+vChoque = vE1 < control.req - 1e-9
+vEup = vChoque ? control.req : vE1
+perfilV = necesaria.map((p) => {
+  const s = seccionX(p.x), E = vEup - p.zb;
+  const a = alternos(s, vQ, E);
+  // Sin choque, el flujo sigue en la rama de llegada. Con choque pasa por el crítico en el control:
+  // subcrítico antes y supercrítico después.
+  let rama = vsub ? "sub" : "sup";
+  if (vChoque) rama = p.x < control.x ? "sub" : "sup";
+  const y = Number.isFinite(a[rama]) ? a[rama] : p.yc;
+  return {...p, y, sup: p.zb + y, energiaL: vEup, critica: p.zb + p.yc, V: vQ / (anchoX(p.x) * y)};
+})
+// Con choque, aguas abajo el chorro supercrítico vuelve al tirante de llegada con un resalto (posición ilustrativa).
+xResalto = 1.05
+dibujoV = perfilV.map((p) => vChoque && vsub && p.x > xResalto ? {...p, y: vy, sup: vy, energiaL: vE1} : p)
+yArriba = alternos(vsec, vQ, vEup)[vChoque ? "sub" : (vsub ? "sub" : "sup")]
+cresta = perfilV.reduce((m, p) => Math.abs(p.x) < Math.abs(m.x) ? p : m)
+```
+
+```{ojs}
+Plot.plot({
+  height: 320,
+  x: {label: "Distancia a lo largo del canal x (m)", domain: [-1.5, 1.5], grid: true},
+  y: {label: "Cota sobre el fondo original (m)", domain: [0, Math.max(vEup, vE1) * 1.25], grid: true},
+  marks: [
+    Plot.areaY(dibujoV, {x: "x", y1: "zb", y2: "sup", fill: "steelblue", fillOpacity: 0.3}),
+    Plot.areaY(dibujoV, {x: "x", y1: 0, y2: "zb", fill: "sienna", fillOpacity: 0.55}),
+    Plot.line(dibujoV, {x: "x", y: "sup", stroke: "steelblue", strokeWidth: 2.5}),
+    Plot.line(dibujoV, {x: "x", y: "energiaL", stroke: "firebrick", strokeDasharray: "6,4"}),
+    Plot.line(dibujoV, {x: "x", y: "critica", stroke: "darkorange", strokeDasharray: "3,3"}),
+    Plot.ruleY([0], {strokeWidth: 2}),
+    vChoque ? Plot.dot([control], {x: "x", y: (p) => p.zb + p.yc, r: 6, fill: "darkorange"}) : null,
+    vChoque && vsub ? Plot.ruleX([xResalto], {stroke: "gray", strokeDasharray: "2,3"}) : null,
+    vChoque && vsub ? Plot.text([{x: xResalto, y: vy * 1.15}], {x: "x", y: "y", text: () => "resalto", dx: 4, textAnchor: "start"}) : null,
+    Plot.text([{x: -1.45, y: vEup}], {x: "x", y: "y", text: () => "línea de energía", dy: -8, textAnchor: "start", fill: "firebrick"}),
+  ],
+  caption: "Vista lateral con escala vertical exagerada. Azul: agua; café: joroba; rojo: línea de energía; naranja: tirante crítico sobre el fondo. El punto naranja marca la sección de control cuando hay estrangulamiento.",
+})
+```
+
+```{ojs}
+Plot.plot({
+  height: 140,
+  x: {label: "x (m)", domain: [-1.5, 1.5]},
+  y: {label: "Planta (m)", domain: [-vb / 2 * 1.3, vb / 2 * 1.3]},
+  marks: [
+    Plot.areaY(xsV.map((x) => ({x, a: -anchoX(x) / 2, b: anchoX(x) / 2})), {x: "x", y1: "a", y2: "b", fill: "steelblue", fillOpacity: 0.25}),
+    Plot.line(xsV.map((x) => ({x, y: anchoX(x) / 2})), {x: "x", y: "y", strokeWidth: 2}),
+    Plot.line(xsV.map((x) => ({x, y: -anchoX(x) / 2})), {x: "x", y: "y", strokeWidth: 2}),
+  ],
+  caption: "Vista en planta: las paredes del canal y el estrechamiento.",
+})
+```
+
+```{ojs}
+resultados([
+  ["Régimen de llegada", regimen(vFr1), "", `Fr₁ = ${cs(vFr1)}; E₁ = ${cs(vE1)} m`],
+  ["Energía mínima para pasar la transición", cs(control.req), "m", `en x = ${cs(control.x, 2)} m`],
+  ["¿Hay estrangulamiento?", vChoque ? "sí" : "no", "", vChoque ? "el caudal no pasa con la energía de llegada" : `sobran ${cs(vE1 - control.req)} m de energía`],
+  ["Tirante sobre la cresta (x = 0)", cs(cresta.y), "m", `superficie ${cresta.sup < vy ? "más baja" : "más alta"} que la de llegada en ${cs(Math.abs(cresta.sup - vy))} m`],
+  ["Velocidad sobre la cresta", cs(cresta.V), "m/s", `llegada: ${cs(vQ / (vb * vy))} m/s`],
+  ["Tirante aguas arriba", cs(yArriba), "m", vChoque ? (vsub ? `el agua se represa ${cs(yArriba - vy)} m` : "un resalto se forma aguas arriba y el flujo llega subcrítico") : "igual al de llegada"],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Con flujo subcrítico, ¿dónde está la superficie más baja: antes, sobre o después de la cresta? ¿Y con flujo supercrítico ($y_1 \approx 0{,}02$ m)?
+2. Sube la joroba hasta el estrangulamiento. ¿En qué punto se vuelve crítico el flujo? Observa que aguas abajo el agua se acelera y pasa a supercrítico: así funciona un **aforador de garganta** (canal Parshall o vertedero de cresta ancha).
+3. Combina una joroba pequeña con un estrechamiento. ¿Basta con que cada una sea "segura" por separado, o el choque depende de las dos juntas?
+
 ## Practica
 
 ```{ojs}
@@ -177,6 +276,41 @@ practica({
       <li>En el ancho mínimo el flujo es crítico con E_min = E₁, así que y_c = (2/3)E₁ = ${cs(yc)} m.</li>
       <li>q_c = √(g y_c³) = ${cs(Math.sqrt(9.81 * yc ** 3))} m²/s y b_min = Q/q_c = <strong>${cs(Q / Math.sqrt(9.81 * yc ** 3))} m</strong>.</li>
     </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Escalón en flujo supercrítico",
+  generar: () => ({q: azar(0.5, 3, 0.1), k: azar(0.35, 0.6, 0.05), dz: azar(0.02, 0.1, 0.01)}),
+  enunciado: ({q, k, dz}) => {
+    const y1 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3));
+    return `Un canal rectangular ancho lleva <strong>q = ${cs(q)} m²/s</strong> con un tirante supercrítico <strong>y₁ = ${cs(y1)} m</strong>. En el fondo hay un escalón de <strong>Δz = ${cs(dz)} m</strong>. Calcula la energía específica de llegada y el tirante sobre el escalón. ¿La superficie del agua sube o baja?`;
+  },
+  respuestas: [
+    {etiqueta: "E₁ =", unidad: "m", valor: ({q, k}) => { const y1 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3)); return y1 + q * q / (19.62 * y1 * y1); }},
+    {etiqueta: "y₂ =", unidad: "m", valor: ({q, k, dz}) => {
+      const y1 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3)), E2 = y1 + q * q / (19.62 * y1 * y1) - dz;
+      const a = alternos({forma: "rectangular", b: 1}, q, E2);
+      return Number.isFinite(a.sup) ? a.sup : Math.cbrt(q * q / 9.81);
+    }},
+    {etiqueta: "La superficie…", opciones: ["sube", "baja"], valor: ({q, k, dz}) => {
+      const y1 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3)), E2 = y1 + q * q / (19.62 * y1 * y1) - dz;
+      const a = alternos({forma: "rectangular", b: 1}, q, E2), y2 = Number.isFinite(a.sup) ? a.sup : Math.cbrt(q * q / 9.81);
+      return y2 + dz > y1 ? "sube" : "baja";
+    }},
+  ],
+  solucion: ({q, k, dz}) => {
+    const y1 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3)), E1 = y1 + q * q / (19.62 * y1 * y1), E2 = E1 - dz;
+    const a = alternos({forma: "rectangular", b: 1}, q, E2), ch = !Number.isFinite(a.sup), y2 = ch ? Math.cbrt(q * q / 9.81) : a.sup;
+    return `<ol>
+      <li>E₁ = y₁ + q²/(2g y₁²) = <strong>${cs(E1)} m</strong>; y_c = ${cs(Math.cbrt(q * q / 9.81))} m, así que y₁ es supercrítico.</li>
+      <li>${ch ? `E₁ − Δz es menor que E_min = 1,5 y_c: hay estrangulamiento y sobre el escalón <strong>y₂ = y_c = ${cs(y2)} m</strong> (aguas arriba se forma un resalto).`
+        : `E₂ = E₁ − Δz = ${cs(E2, 4)} m. En la rama <em>supercrítica</em>: <strong>y₂ = ${cs(y2)} m</strong>, mayor que y₁.`}</li>
+      <li>Cota de la superficie: y₂ + Δz = ${cs(y2 + dz)} m frente a y₁ = ${cs(y1)} m: la superficie <strong>${y2 + dz > y1 ? "sube" : "baja"}</strong>.</li>
+    </ol>
+    <p>Al revés que en subcrítico: el agua rápida pierde velocidad al subir el escalón y gana tirante.</p>`;
   },
 })
 ```
