@@ -1,0 +1,195 @@
+---
+title: "Semana 14 · Canales con vegetación y secciones compuestas"
+subtitle: "Unidad 3 · Flujo gradualmente variado"
+---
+
+::: {.callout-note appearance="simple"}
+**RA3.** Modelar perfiles de flujo gradualmente variado y aplicar criterios de sostenibilidad ambiental y prevención de riesgos de inundación en el diseño de sistemas hídricos en canales abiertos.
+
+**Lo que debes lograr esta semana.** Estimar la rugosidad de canales con vegetación o con varios materiales, calcular el caudal de un cauce con llanuras de inundación y aforar una creciente pasada con el método sección-pendiente.
+
+**Laboratorio 6 de 6 y salida de campo:** método sección-pendiente en los canales abiertos de Villa Carolina.
+:::
+
+## Antes de clase
+
+- Chow, cap. 5: factores que afectan el coeficiente de rugosidad (vegetación, irregularidad, obstrucciones), rugosidad compuesta y canales de sección compuesta; cap. 7: canales revestidos con pasto.
+- Repasa la ecuación de Manning de la [semana 6](semana-06.qmd).
+
+## Ideas clave
+
+**Por qué canales con vegetación.** Un canal revestido en pasto o con vegetación riparia cuesta menos que uno de concreto, protege el suelo de la erosión, filtra sedimentos y contaminantes, da hábitat y permite infiltración. A cambio, la vegetación frena el agua: aumenta $n$ y el canal necesita más sección.
+
+**La rugosidad cambia con el flujo.** En un canal con pasto, $n$ depende de la altura y rigidez de la vegetación y del producto $V R$: con flujos pequeños el pasto queda erguido y $n$ es alto; con flujos grandes se acuesta y $n$ baja. Por eso se diseña en dos pasos (Chow, curvas de retardo del SCS):
+
+1. **Estabilidad:** con vegetación corta o recién cortada ($n$ bajo, velocidad alta), comprueba que no se supere la velocidad permisible.
+2. **Capacidad:** con vegetación alta ($n$ alto, tirante alto), comprueba el borde libre.
+
+**Rugosidad compuesta.** Si el perímetro mojado tiene partes de distinto material (fondo de grava y taludes con pasto), el $n$ equivalente según Horton y Einstein es:
+
+$$
+n_e = \left[\frac{\sum_i P_i\,n_i^{3/2}}{P}\right]^{2/3}
+$$
+
+::: {.variables}
+- $n_e$: rugosidad equivalente de toda la sección [s/m^1/3].
+- $P_i$, $n_i$: perímetro mojado y rugosidad de la parte $i$ [m, s/m^1/3].
+- $P$: perímetro mojado total [m].
+:::
+
+**Sección compuesta (cauce y llanuras).** Cuando un río se desborda, el agua sobre las llanuras es lenta y poco profunda, y la del cauce es rápida. Usar un solo $R$ para toda la sección subestima el caudal. Se divide la sección con líneas verticales en los bordes del cauce y se suma:
+
+$$
+Q = \sum_i \frac{1}{n_i}\,A_i\,R_i^{2/3}\,S^{1/2}
+$$
+
+::: {.variables}
+- $A_i$, $R_i$, $n_i$: área, radio hidráulico y rugosidad de la subsección $i$ [m², m, s/m^1/3]. Las líneas divisorias no cuentan en el perímetro mojado.
+- $S$: pendiente de la línea de energía [m/m].
+:::
+
+**Método sección-pendiente.** Después de una creciente quedan **marcas de nivel máximo** (sedimento, basura en las ramas). Con la topografía de dos o más secciones se obtienen $A$ y $R$; con la diferencia de nivel entre las marcas, la pendiente de la superficie $S$; con la vegetación y el material, $n$. Manning da el caudal pico. Es la forma de aforar crecientes que nadie midió.
+
+## Simulador: cauce con llanuras de inundación
+
+```{ojs}
+import {cs, practica, azar, elegir, resultados} from "../recursos/hc.js"
+```
+
+```{ojs}
+vegetacion = ({
+  "Pasto corto": 0.030,
+  "Pasto alto": 0.035,
+  "Matorral disperso": 0.050,
+  "Matorral denso": 0.070,
+  "Árboles con poco sotobosque": 0.100,
+})
+viewof bc = Inputs.range([2, 30], {value: 10, step: 0.5, label: "Ancho de fondo del cauce (m)"})
+viewof hc = Inputs.range([0.5, 5], {value: 2, step: 0.1, label: "Profundidad del cauce hasta las orillas (m)"})
+viewof zc = Inputs.range([0, 3], {value: 1.5, step: 0.25, label: "Talud del cauce z (z:1)"})
+viewof nc = Inputs.range([0.025, 0.05], {value: 0.03, step: 0.001, label: "n del cauce principal"})
+viewof Bp = Inputs.range([0, 100], {value: 40, step: 1, label: "Ancho de cada llanura (m)"})
+viewof veg = Inputs.select(Object.keys(vegetacion), {value: "Matorral disperso", label: "Vegetación de las llanuras"})
+viewof S = Inputs.range([0.0001, 0.005], {value: 0.0008, step: 0.0001, label: "Pendiente de la superficie S (m/m)"})
+viewof h = Inputs.range([0.2, 8], {value: 3, step: 0.05, label: "Nivel del agua sobre el fondo del cauce h (m)"})
+```
+
+```{ojs}
+np = vegetacion[veg]
+calcular = (h) => {
+  const Tc = bc + 2 * zc * Math.min(h, hc);
+  const Ac = (bc + zc * Math.min(h, hc)) * Math.min(h, hc) + (h > hc ? (bc + 2 * zc * hc) * (h - hc) : 0);
+  const Pc = bc + 2 * Math.min(h, hc) * Math.sqrt(1 + zc * zc);
+  const dp = Math.max(h - hc, 0);
+  const Ap = Bp * dp, Pp = dp > 0 ? Bp + dp : 0;
+  const Qc = Ac * Math.pow(Ac / Pc, 2 / 3) * Math.sqrt(S) / nc;
+  const Qp = Ap > 0 ? Ap * Math.pow(Ap / Pp, 2 / 3) * Math.sqrt(S) / np : 0;
+  const A = Ac + 2 * Ap, P = Pc + 2 * Pp;
+  const ne = Math.pow((Pc * nc ** 1.5 + 2 * Pp * np ** 1.5) / P, 2 / 3);
+  const Qunico = A * Math.pow(A / P, 2 / 3) * Math.sqrt(S) / ne;
+  return {Ac, Pc, Ap, Pp, Qc, Qp, Q: Qc + 2 * Qp, A, P, ne, Qunico, Tc};
+}
+r = calcular(h)
+curvaH = d3.range(1, 121).map((i) => ({h: 8 * i / 120})).map((p) => ({...p, ...calcular(p.h)}))
+xb = bc / 2 + zc * hc
+terreno = [
+  {x: -xb - Bp, y: hc + 6}, {x: -xb - Bp, y: hc}, {x: -xb, y: hc}, {x: -bc / 2, y: 0},
+  {x: bc / 2, y: 0}, {x: xb, y: hc}, {x: xb + Bp, y: hc}, {x: xb + Bp, y: hc + 6},
+]
+nivel = d3.range(0, 401).map((i) => {
+  const x = -xb - Bp + (2 * (xb + Bp)) * i / 400, ax = Math.abs(x);
+  const fondo = ax <= bc / 2 ? 0 : ax <= xb ? (zc > 0 ? (ax - bc / 2) / zc : hc) : hc;
+  return {x, fondo, agua: Math.max(h, fondo)};
+})
+```
+
+```{ojs}
+Plot.plot({
+  height: 260,
+  x: {label: "Distancia transversal (m)", grid: true},
+  y: {label: "Elevación sobre el fondo (m)", domain: [0, Math.max(h, hc) * 1.3], grid: true},
+  marks: [
+    Plot.areaY(nivel, {x: "x", y1: "fondo", y2: "agua", fill: "steelblue", fillOpacity: 0.35}),
+    Plot.line(terreno, {x: "x", y: "y", stroke: "sienna", strokeWidth: 2.5}),
+    h > hc ? Plot.ruleX([-xb, xb], {stroke: "gray", strokeDasharray: "4,4"}) : null,
+  ],
+  caption: "Sección transversal con escala vertical exagerada. Las líneas grises separan el cauce de las llanuras para el cálculo por subsecciones.",
+})
+```
+
+```{ojs}
+Plot.plot({
+  height: 260,
+  x: {label: "Caudal Q (m³/s)", grid: true},
+  y: {label: "Nivel h (m)", grid: true},
+  marks: [
+    Plot.line(curvaH, {x: "Q", y: "h", stroke: "steelblue", strokeWidth: 2}),
+    Plot.line(curvaH, {x: "Qunico", y: "h", stroke: "firebrick", strokeDasharray: "6,4"}),
+    Plot.ruleY([hc], {stroke: "sienna", strokeOpacity: 0.6}),
+    Plot.dot([{Q: r.Q, h}], {x: "Q", y: "h", r: 6, fill: "steelblue"}),
+  ],
+  caption: "Curva nivel-caudal. Azul: por subsecciones. Rojo: como una sola sección con n equivalente de Horton. La línea café es el nivel de las orillas.",
+})
+```
+
+```{ojs}
+resultados([
+  ["n de las llanuras", cs(np), "s/m^1/3", veg],
+  ["Caudal por el cauce principal", cs(r.Qc), "m³/s", `V = ${cs(r.Qc / r.Ac)} m/s`],
+  ["Caudal por las dos llanuras", cs(2 * r.Qp), "m³/s", r.Ap > 0 ? `V = ${cs(r.Qp / r.Ap)} m/s` : "sin desborde"],
+  ["Caudal total por subsecciones", cs(r.Q), "m³/s"],
+  ["n equivalente de Horton", cs(r.ne), "s/m^1/3"],
+  ["Caudal como sección única", cs(r.Qunico), "m³/s", `${cs(100 * (r.Qunico / r.Q - 1), 2)} % frente a subsecciones`],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Sube el nivel justo por encima de las orillas. ¿Qué pasa con el caudal calculado como sección única? ¿Por qué la curva roja puede incluso bajar?
+2. Cambia la vegetación de las llanuras de pasto corto a árboles. ¿Cuánto caudal pierden las llanuras? ¿Qué gana el ecosistema?
+3. En la salida de campo mides $h = 2{,}6$ m en las marcas de la creciente y $S = 0{,}0008$. ¿Qué caudal pico estimas con tus datos del cauce?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Rugosidad compuesta de Horton",
+  generar: () => ({b: azar(2, 6, 0.5), y: azar(0.6, 2, 0.1), z: elegir([1.5, 2]), nf: elegir([0.022, 0.025, 0.03]), nt: elegir([0.035, 0.04, 0.05])}),
+  enunciado: ({b, y, z, nf, nt}) => `Un canal trapecial tiene fondo de grava (<strong>n = ${cs(nf)}</strong>, b = ${cs(b)} m) y taludes ${cs(z)}:1 cubiertos de pasto (<strong>n = ${cs(nt)}</strong>). Con <strong>y = ${cs(y)} m</strong>, calcula el perímetro de cada material y el n equivalente.`,
+  respuestas: [
+    {etiqueta: "P taludes =", unidad: "m", valor: ({y, z}) => 2 * y * Math.sqrt(1 + z * z)},
+    {etiqueta: "n e =", unidad: "", valor: ({b, y, z, nf, nt}) => { const Pt = 2 * y * Math.sqrt(1 + z * z); return Math.pow((b * nf ** 1.5 + Pt * nt ** 1.5) / (b + Pt), 2 / 3); }},
+  ],
+  solucion: ({b, y, z, nf, nt}) => {
+    const Pt = 2 * y * Math.sqrt(1 + z * z), ne = Math.pow((b * nf ** 1.5 + Pt * nt ** 1.5) / (b + Pt), 2 / 3);
+    return `<ol>
+      <li>P fondo = b = ${cs(b)} m; P taludes = 2y√(1 + z²) = <strong>${cs(Pt)} m</strong>; P = ${cs(b + Pt)} m.</li>
+      <li>Σ P_i n_i^(3/2) = ${cs(b)}·${cs(nf)}^1,5 + ${cs(Pt)}·${cs(nt)}^1,5 = ${cs(b * nf ** 1.5 + Pt * nt ** 1.5, 4)}.</li>
+      <li>n_e = (${cs(b * nf ** 1.5 + Pt * nt ** 1.5, 4)}/${cs(b + Pt)})^(2/3) = <strong>${cs(ne)}</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Caudal pico por sección-pendiente",
+  generar: () => ({A: azar(15, 120, 1), P: azar(15, 60, 1), dz: azar(0.1, 0.6, 0.02), L: elegir([200, 250, 300, 400, 500]), n: elegir([0.03, 0.035, 0.04])}),
+  enunciado: ({A, P, dz, L, n}) => `Tras una creciente, en un tramo de <strong>${L} m</strong> las marcas de nivel máximo difieren <strong>${cs(dz)} m</strong> entre las dos secciones. La sección promedio tiene <strong>A = ${cs(A)} m²</strong> y <strong>P = ${cs(P)} m</strong>, y se estima <strong>n = ${cs(n)}</strong>. Calcula la pendiente de la superficie y el caudal pico.`,
+  respuestas: [
+    {etiqueta: "S =", unidad: "m/m", valor: ({dz, L}) => dz / L},
+    {etiqueta: "Q =", unidad: "m³/s", valor: ({A, P, dz, L, n}) => A * Math.pow(A / P, 2 / 3) * Math.sqrt(dz / L) / n},
+  ],
+  solucion: ({A, P, dz, L, n}) => `<ol>
+      <li>S = Δh/L = ${cs(dz)}/${L} = <strong>${cs(dz / L)}</strong> (tramo uniforme: pendiente de energía ≈ de la superficie).</li>
+      <li>R = A/P = ${cs(A / P)} m.</li>
+      <li>Q = (1/n) A R^(2/3) S^(1/2) = <strong>${cs(A * Math.pow(A / P, 2 / 3) * Math.sqrt(dz / L) / n)} m³/s</strong>.</li>
+    </ol>
+    <p>La mayor incertidumbre está en n: un error del 20 % en n da un 20 % en el caudal.</p>`,
+})
+```
+
+## Después de clase
+
+- **Informe de la salida de campo:** levantamiento de dos secciones, marcas de nivel, estimación de n con fotografías y caudal pico.
+- **Proyecto integrador:** agrega a tu diseño una alternativa con vegetación y compárala con la revestida.

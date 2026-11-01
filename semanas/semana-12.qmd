@@ -1,0 +1,166 @@
+---
+title: "Semana 12 · Perfiles de flujo y secciones de control"
+subtitle: "Unidad 3 · Flujo gradualmente variado"
+---
+
+::: {.callout-note appearance="simple"}
+**RA3.** Modelar perfiles de flujo gradualmente variado y aplicar criterios de sostenibilidad ambiental y prevención de riesgos de inundación en el diseño de sistemas hídricos en canales abiertos.
+
+**Lo que debes lograr esta semana.** Ubicar las secciones de control de un canal, decidir en qué sentido se calcula cada perfil y dibujar los perfiles M y S que producen presas, compuertas y caídas.
+
+**Laboratorio 5 de 6:** clasificación de perfiles en el canal inclinado.
+:::
+
+## Antes de clase
+
+- Chow, cap. 9: secciones de control y análisis de perfiles; cap. 10, primeros numerales del método del paso directo.
+- Repasa la tabla de perfiles de la [semana 11](semana-11.qmd).
+
+## Ideas clave
+
+**Sección de control.** Es un lugar donde el tirante tiene una relación conocida con el caudal: una compuerta, una presa o vertedero, una caída libre (tirante crítico) o un cambio de pendiente de suave a fuerte. Desde ahí se calcula el perfil.
+
+**Sentido del cálculo.** Las perturbaciones viajan aguas arriba solo en flujo subcrítico, así que:
+
+- **Flujo subcrítico** ($y > y_c$): lo controla lo que está **aguas abajo**. El perfil se calcula desde el control **hacia aguas arriba**.
+- **Flujo supercrítico** ($y < y_c$): lo controla lo que está **aguas arriba**. El perfil se calcula desde el control **hacia aguas abajo**.
+
+**Hacia dónde tiende cada perfil.** Lejos del control el flujo vuelve al uniforme ($y \to y_n$) de forma asintótica. Si para eso tendría que cruzar $y_c$, no puede hacerlo gradualmente: en el paso de supercrítico a subcrítico aparece un **resalto**, y en el paso de subcrítico a supercrítico, una caída a través de $y_c$.
+
+**Método del paso directo** (canal prismático). Se fijan tirantes sucesivos $y_1, y_2, \dots$ y se calcula la distancia entre ellos:
+
+$$
+\Delta x = \frac{E_2 - E_1}{S_0 - \bar{S}_f} \qquad \bar{S}_f = \frac{S_{f1} + S_{f2}}{2}
+$$
+
+::: {.variables}
+- $\Delta x$: distancia entre las secciones con tirantes $y_1$ y $y_2$ [m]; positiva aguas abajo.
+- $E_1$, $E_2$: energía específica en cada sección [m].
+- $S_0$: pendiente del fondo [m/m].
+- $\bar{S}_f$: pendiente de fricción media del tramo [m/m].
+:::
+
+## Simulador: perfiles con sus controles
+
+```{ojs}
+import {cs, practica, azar, elegir, resultados, tiranteNormal, tiranteCritico, perfilFGV, clasificarPerfil} from "../recursos/hc.js"
+```
+
+```{ojs}
+casos = ({
+  "M1 · presa en pendiente suave": {S: 0.0008, k: 2.2},
+  "M2 · caída libre en pendiente suave": {S: 0.0008, k: 1.02},
+  "M3 · compuerta en pendiente suave": {S: 0.0008, k: 0.5},
+  "S1 · presa en pendiente fuerte": {S: 0.02, k: 1.8},
+  "S2 · entrada a pendiente fuerte": {S: 0.02, k: 0.98},
+  "S3 · compuerta en pendiente fuerte": {S: 0.02, k: 0.3},
+})
+viewof caso = Inputs.select(Object.keys(casos), {label: "Caso"})
+viewof S0 = Inputs.range([0.0002, 0.03], {value: casos[caso].S, step: 0.0001, label: "Pendiente S₀ (m/m)"})
+viewof k = Inputs.range([0.1, 3], {value: casos[caso].k, step: 0.01, label: "Tirante en el control / yc"})
+viewof b = Inputs.range([0.5, 10], {value: 3, step: 0.1, label: "Ancho de fondo b (m)"})
+viewof z = Inputs.range([0, 3], {value: 1.5, step: 0.25, label: "Talud z (z:1)"})
+viewof n = Inputs.range([0.010, 0.040], {value: 0.015, step: 0.001, label: "Rugosidad n"})
+viewof Q = Inputs.range([0.5, 50], {value: 12, step: 0.5, label: "Caudal Q (m³/s)"})
+```
+
+```{ojs}
+sec = ({forma: "trapecial", b, z})
+yc = tiranteCritico(sec, Q)
+y0 = k * yc
+perfil = perfilFGV(sec, Q, n, S0, y0, 80)
+pts = perfil && perfil.puntos.length ? perfil.puntos.map((p) => ({...p, fondo: -S0 * p.x, sup: -S0 * p.x + p.y, yn: -S0 * p.x + perfil.yn, yc: -S0 * p.x + yc})) : []
+```
+
+```{ojs}
+pts.length ? Plot.plot({
+  height: 340,
+  x: {label: "Distancia x (m), positiva aguas abajo; el control está en x = 0", grid: true},
+  y: {label: "Cota relativa (m)", grid: true},
+  marks: [
+    Plot.areaY(pts, {x: "x", y1: "fondo", y2: "sup", fill: "steelblue", fillOpacity: 0.3}),
+    Plot.line(pts, {x: "x", y: "sup", stroke: "steelblue", strokeWidth: 2.5}),
+    Plot.line(pts, {x: "x", y: "fondo", stroke: "currentColor", strokeWidth: 2}),
+    Plot.line(pts, {x: "x", y: "yn", stroke: "seagreen", strokeDasharray: "6,4"}),
+    Plot.line(pts, {x: "x", y: "yc", stroke: "darkorange", strokeDasharray: "6,4"}),
+    Plot.ruleX([0], {stroke: "firebrick", strokeWidth: 2}),
+    Plot.text([pts[0]], {x: "x", y: "sup", text: () => "control", dy: -10, fill: "firebrick"}),
+  ],
+  caption: "Perfil calculado con el método del paso directo. Verde: tirante normal; naranja: tirante crítico; negro: fondo. Escala vertical exagerada.",
+}) : html`<p><em>${perfil ? "El tirante del control coincide con el normal: flujo uniforme." : "No hay tirante normal para estos datos."}</em></p>`
+```
+
+```{ojs}
+resultados([
+  ["Tirante normal, yn", cs(perfil?.yn), "m", perfil ? (perfil.yn > yc ? "pendiente suave" : "pendiente fuerte") : ""],
+  ["Tirante crítico, yc", cs(yc), "m"],
+  ["Tirante en el control, y₀", cs(y0), "m"],
+  ["Perfil", perfil?.tipo ?? "—", "", perfil?.sentido ? `se calcula ${perfil.sentido} desde el control` : ""],
+  ["El perfil termina en", pts.length ? cs(pts.at(-1).y) : "—", "m", perfil && ["S1", "M3"].includes(perfil.tipo) ? "cerca de yc: ahí se forma un resalto" : "se acerca al tirante normal"],
+  ["Longitud calculada", pts.length ? cs(Math.abs(pts.at(-1).x)) : "—", "m"],
+])
+```
+
+```{ojs}
+pts.length ? html`<details><summary>Ver la tabla del paso directo</summary>
+<table class="table table-sm resultados">
+<thead><tr><th>y (m)</th><th>V (m/s)</th><th>Fr</th><th>E (m)</th><th>Sf</th><th>x (m)</th></tr></thead>
+<tbody>${pts.filter((p, i) => i % 8 === 0 || i === pts.length - 1).map((p) => html`<tr><td class="valor">${cs(p.y, 4)}</td><td class="valor">${cs(p.V)}</td><td class="valor">${cs(p.Fr)}</td><td class="valor">${cs(p.E, 4)}</td><td class="valor">${cs(p.Sf)}</td><td class="valor">${cs(p.x, 4)}</td></tr>`)}</tbody>
+</table></details>` : ""
+```
+
+**Preguntas para explorar:**
+
+1. Recorre los seis casos. ¿En cuáles el perfil se calcula hacia aguas arriba? Relaciónalo con el régimen en el control.
+2. En el caso M3, ¿qué tirante tendría que tener el canal aguas abajo para que el resalto se forme lejos de la compuerta? (Lo resuelves en la [semana 15](semana-15.qmd).)
+3. Aumenta $n$ en el caso M1. ¿El remanso se hace más largo o más corto?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Control y sentido del cálculo",
+  generar: () => elegir([
+    {txt: "aguas arriba de una presa en un canal de pendiente suave", tipo: "M1", sentido: "hacia aguas arriba"},
+    {txt: "aguas arriba de una caída libre en un canal de pendiente suave", tipo: "M2", sentido: "hacia aguas arriba"},
+    {txt: "inmediatamente aguas abajo de una compuerta en un canal de pendiente suave", tipo: "M3", sentido: "hacia aguas abajo"},
+    {txt: "al inicio de un canal de pendiente fuerte que sale de un embalse", tipo: "S2", sentido: "hacia aguas abajo"},
+    {txt: "aguas abajo de una compuerta en una rápida de pendiente fuerte, con chorro más bajo que el normal", tipo: "S3", sentido: "hacia aguas abajo"},
+    {txt: "aguas arriba de un vertedero en una rápida de pendiente fuerte, después del resalto", tipo: "S1", sentido: "hacia aguas arriba"},
+  ]),
+  enunciado: ({txt}) => `Se quiere calcular el perfil del flujo <strong>${txt}</strong>. ¿Qué perfil es y en qué sentido se calcula desde el control?`,
+  respuestas: [
+    {etiqueta: "Perfil", opciones: ["M1", "M2", "M3", "S1", "S2", "S3"], valor: ({tipo}) => tipo},
+    {etiqueta: "Sentido", opciones: ["hacia aguas arriba", "hacia aguas abajo"], valor: ({sentido}) => sentido},
+  ],
+  solucion: ({tipo, sentido}) => `<p>Es un perfil <strong>${tipo}</strong>. El flujo es ${sentido === "hacia aguas arriba" ? "subcrítico (zona 1 o 2 por encima de y_c)" : "supercrítico (por debajo de y_c)"}, así que se calcula <strong>${sentido}</strong> desde el control.</p>`,
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Un paso del método directo",
+  generar: () => ({b: azar(2, 6, 0.5), Q: azar(4, 20, 1), n: elegir([0.013, 0.015]), S: elegir([0.0005, 0.001]), y1: azar(1.6, 3, 0.1), dy: elegir([0.1, 0.2])}),
+  enunciado: ({b, Q, n, S, y1, dy}) => `En un canal rectangular de <strong>${cs(b)} m</strong> con <strong>Q = ${cs(Q)} m³/s</strong>, <strong>n = ${cs(n)}</strong> y <strong>S₀ = ${cs(S)}</strong> hay un remanso. En la sección 1 el tirante es <strong>${cs(y1)} m</strong>. ¿A qué distancia aguas arriba el tirante es <strong>${cs(y1 - dy)} m</strong>? Usa un solo paso, con S_f media aritmética.`,
+  respuestas: [{etiqueta: "|Δx| =", unidad: "m", valor: ({b, Q, n, S, y1, dy}) => {
+    const f = (y) => { const A = b * y, R = A / (b + 2 * y); return {E: y + (Q / A) ** 2 / 19.62, Sf: (n * Q) ** 2 / (A * A * Math.pow(R, 4 / 3))}; };
+    const p1 = f(y1), p2 = f(y1 - dy);
+    return Math.abs((p2.E - p1.E) / (S - (p1.Sf + p2.Sf) / 2));
+  }}],
+  solucion: ({b, Q, n, S, y1, dy}) => {
+    const f = (y) => { const A = b * y, R = A / (b + 2 * y); return {A, R, E: y + (Q / A) ** 2 / 19.62, Sf: (n * Q) ** 2 / (A * A * Math.pow(R, 4 / 3))}; };
+    const p1 = f(y1), p2 = f(y1 - dy), Sm = (p1.Sf + p2.Sf) / 2, dx = (p2.E - p1.E) / (S - Sm);
+    return `<ol>
+      <li>Sección 1: A = ${cs(p1.A)} m², R = ${cs(p1.R)} m, E₁ = ${cs(p1.E, 4)} m, S_f1 = ${cs(p1.Sf)}.</li>
+      <li>Sección 2: A = ${cs(p2.A)} m², R = ${cs(p2.R)} m, E₂ = ${cs(p2.E, 4)} m, S_f2 = ${cs(p2.Sf)}.</li>
+      <li>S_f media = ${cs(Sm)}; Δx = (E₂ − E₁)/(S₀ − S_f media) = ${cs(p2.E - p1.E, 4)}/${cs(S - Sm)} = ${cs(dx)} m.</li>
+      <li>El signo negativo indica aguas arriba: <strong>|Δx| = ${cs(Math.abs(dx))} m</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Informe del laboratorio 5:** fotografía y dibuja los perfiles observados en el canal inclinado; clasifícalos y ubica sus controles.
+- **Tarea 3 en GitHub:** agrega el método del paso directo en `corte3.py`.

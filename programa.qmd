@@ -1,0 +1,78 @@
+---
+title: "Programa de 16 semanas"
+subtitle: "Hidráulica de Canales · microcurrículo y consignador FR-015"
+---
+
+Curso teórico-práctico, presencial, de **4 créditos** y 4 horas semanales de clase, en el VI semestre de Ingeniería Ambiental. Requisito: Mecánica de Fluidos. Tributa al **RAP 1** del programa: aplicar los fundamentos de las ciencias básicas y de la ingeniería en la identificación, formulación y solución de problemas complejos de ingeniería.
+
+| Unidad y resultado de aprendizaje | Contenidos | Semanas |
+|---|---|---|
+| **Unidad 1 · RA1.** Analizar el flujo de agua en canales a cielo abierto aplicando los principios de conservación de masa y energía, diferenciando regímenes de flujo (libre/confinado, sub/crítico/supercrítico) mediante el número de Froude. | Flujo libre y confinado, geometría de canales, distribución de velocidades, efectos de la viscosidad y la gravedad, energía específica, flujo crítico | 1 a 5 |
+| **Unidad 2 · RA2.** Diseñar y evaluar canales erosionables y no erosionables aplicando las ecuaciones de flujo uniforme (Manning y Chezy) y el principio de momentum, incluyendo el análisis del resalto hidráulico como disipador de energía. | Manning y Chezy, velocidad permisible, momentum, resalto hidráulico | 6 a 10 |
+| **Unidad 3 · RA3.** Modelar perfiles de flujo gradualmente variado y aplicar criterios de sostenibilidad ambiental y prevención de riesgos de inundación en el diseño de sistemas hídricos en canales abiertos. | Ecuación dinámica, perfiles de flujo, métodos de cálculo, consideraciones ambientales, canales con vegetación | 11 a 15 |
+
+## Cronograma
+
+```{ojs}
+programa = FileAttachment("datos/programa.json").json()
+
+fechaSemana = (n) => {
+  const [a, m, d] = programa.primera_clase.split("-").map(Number);
+  const f = new Date(a, m - 1, d + 7 * (n - 1));
+  return f.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+}
+
+html`<p>Periodo <strong>${programa.periodo}</strong> · ${programa.horario}</p>
+<table class="table table-sm">
+  <thead><tr><th>Semana</th><th>Desde</th><th>Unidad</th><th>Tema</th><th>Laboratorio</th><th>Evaluación</th></tr></thead>
+  <tbody>${programa.semanas.map((s) => html`<tr>
+    <td>${s.n <= 15 ? html`<a href="semanas/semana-${String(s.n).padStart(2, "0")}.html">${s.n}</a>` : s.n}</td>
+    <td>${fechaSemana(s.n)}</td>
+    <td>${s.unidad}</td>
+    <td>${s.tema}</td>
+    <td>${s.laboratorio || ""}</td>
+    <td>${s.evaluacion ? html`<strong>${s.evaluacion}</strong>` : ""}</td>
+  </tr>`)}</tbody>
+</table>`
+```
+
+Supletorios y habilitaciones: semana 17, según el calendario académico.
+
+## Evaluación
+
+Distribución del microcurrículo. La actividad final de cada corte es un **entregable del proyecto integrador**.
+
+| Corte | Actividades formativas | Actividad final de corte | Total |
+|---|---:|---:|---:|
+| Primer corte (semanas 1 a 5) | 18 % | 12 % | 30 % |
+| Segundo corte (semanas 6 a 10) | 18 % | 12 % | 30 % |
+| Tercer corte (semanas 11 a 15) | 24 % | 16 % | 40 % |
+
+Las actividades formativas son talleres, quices, informes de laboratorio, trabajo en clase, trabajo independiente y la **tarea en GitHub** del corte.
+
+**Niveles de desempeño:** nivel 1 de 1,0 a 2,9; nivel 2 de 3,0 a 3,7; nivel 3 de 3,8 a 4,5; nivel 4 de 4,6 a 5,0.
+
+## Estrategias del microcurrículo
+
+- **Enseñanza teórica y resolución de problemas:** exposición en clase y ejercicios de este sitio.
+- **Enseñanza práctica:** seis prácticas en el canal de pendiente variable y una salida de campo a los canales abiertos de Villa Carolina. Ver [Laboratorios](laboratorios.qmd).
+- **Aprendizaje basado en problemas y estudio de casos:** el colector pluvial circular (semana 3), el remanso aguas arriba de una presa (semana 13) y el canal con vegetación (semana 14).
+- **Aprendizaje cooperativo:** laboratorios en equipo y [proyecto integrador](proyecto.qmd).
+- **Aula virtual:** guías de estudio, videos y entrega de informes.
+
+## Bibliografía
+
+**Básica**
+
+- Chow, V. T. *Hidráulica de canales abiertos*. McGraw-Hill.
+- Mott, R. L. y Untener, J. A. *Mecánica de fluidos aplicada*. Pearson. Capítulo 14, *Flujo en canales abiertos*.
+- Sotelo Ávila, G. *Hidráulica de canales*. UNAM, Facultad de Ingeniería.
+
+**Complementaria**
+
+- Cadavid R., J. H. *Hidráulica de canales: fundamentos*. Universidad EAFIT.
+- Chanson, H. *Hidráulica del flujo en canales abiertos*. McGraw-Hill.
+- Villón Béjar, M. *Hidráulica de canales*. Editorial Tecnológica de Costa Rica.
+- Rocha Felices, A. *Hidráulica de tuberías y canales*. Universidad Nacional de Ingeniería, Lima.
+- Sturm, T. W. *Open Channel Hydraulics*, 3.ª ed. McGraw-Hill, 2021.
+- Subramanya, K. *Flow in Open Channels*, 4.ª ed. McGraw-Hill, 2015.

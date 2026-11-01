@@ -1,0 +1,43 @@
+---
+title: "Laboratorios"
+subtitle: "Seis prácticas en el canal de pendiente variable y una salida de campo"
+---
+
+Cada práctica se hace en equipo y se entrega como informe en el aula virtual una semana después. Antes de ir al laboratorio, **predice los resultados con el simulador** de la semana con los datos aproximados del canal; en el informe compara lo medido con lo predicho y explica las diferencias.
+
+| # | Práctica | Semana | Simulador de apoyo |
+|---|---|---|---|
+| 1 | Energía específica y régimen de flujo | [4](semanas/semana-04.qmd) | Curva de energía específica; escalón y contracción |
+| 2 | Geometría del canal, perfil de velocidad y aforo por vertedero | [5](semanas/semana-05.qmd) | Perfil de velocidad; vertedero de aforo |
+| 3 | Flujo uniforme: Manning y Chezy con rugosidad y pendiente variables | [9](semanas/semana-09.qmd) | Tirante normal |
+| 4 | Resalto hidráulico y cantidad de movimiento con compuerta | [10](semanas/semana-10.qmd) | Compuerta deslizante; fuerza específica y resalto |
+| 5 | Flujo gradualmente variado: clasificación de perfiles en el canal inclinado | [12](semanas/semana-12.qmd) | Perfiles con sus controles |
+| 6 | Método sección-pendiente en un cauce real (salida de campo a Villa Carolina) | [14](semanas/semana-14.qmd) | Cauce con llanuras de inundación |
+
+## Qué medir en cada práctica
+
+**1. Energía específica y régimen.** Caudal (volumétrico o con el vertedero de entrada); tirantes antes, sobre y después de un escalón o una compuerta. Calcula $E$ y $Fr$ en cada sección, ubica los puntos sobre la curva $E$-$y$ teórica y verifica que el tirante crítico separa los dos regímenes.
+
+**2. Geometría y aforo.** Ancho, tirante y pendiente del canal. Perfil de velocidad en la vertical central con el tubo de Pitot o el molinete (al menos seis puntos). Caudal por área-velocidad, por vertedero y por el método volumétrico. Compara los tres y discute cuál es más confiable.
+
+**3. Flujo uniforme.** Para dos pendientes y dos rugosidades (fondo liso, con lija y con piedras), ajusta el caudal hasta lograr tirante constante a lo largo del canal. Calcula $n$ de Manning y $C$ de Chezy en cada caso. ¿Es $n$ constante para un mismo fondo?
+
+**4. Resalto y compuerta.** Abertura de la compuerta, tirantes aguas arriba, en la vena contracta y después del resalto; longitud del resalto. Calcula $C_d$, $C_c$, la fuerza sobre la compuerta por momentum, $y_2$ con Bélanger frente al medido, la pérdida de energía y el tipo de resalto.
+
+**5. Perfiles de flujo.** Con la compuerta y la pendiente del canal, produce al menos tres perfiles distintos (por ejemplo M1, M3 y S2). Mide el tirante cada 20 a 30 cm, dibuja el perfil, clasifícalo y ubica su control. Calcula un tramo con el paso directo y compáralo con lo medido.
+
+**6. Sección-pendiente en campo.** En dos secciones del canal de Villa Carolina separadas al menos 100 m: topografía de la sección (cinta y mira o estación total), marcas de nivel alto, material del fondo y vegetación (con fotografías para estimar $n$). Calcula el caudal pico y el caudal del día de la visita.
+
+## Estructura del informe
+
+1. **Objetivo** de la práctica, en una frase.
+2. **Esquema** del montaje con las secciones de medición.
+3. **Datos medidos** en tabla, con unidades e incertidumbre de cada instrumento.
+4. **Cálculos:** un ejemplo completo a mano y el resto en tabla (hoja de cálculo o Python).
+5. **Comparación** con la teoría y con el simulador: gráficas y error porcentual.
+6. **Discusión:** fuentes de error, hipótesis que no se cumplen, qué cambiarías.
+7. **Conclusiones** que respondan al objetivo.
+
+## Seguridad
+
+Usa calzado cerrado; no te apoyes en las paredes de acrílico del canal; seca el piso antes de mover equipos eléctricos; en campo, trabaja siempre en pareja, lejos de la corriente si el agua supera la rodilla, y con chaleco salvavidas si el docente lo indica.

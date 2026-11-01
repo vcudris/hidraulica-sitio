@@ -1,0 +1,48 @@
+---
+title: "Proyecto integrador"
+subtitle: "Diseño, modelación y análisis físico-hidráulico de un canal a cielo abierto frente a la alteración del flujo y la formación de resaltos hidráulicos"
+---
+
+Proyecto en equipo que atraviesa todo el semestre. Integra Hidráulica de Canales con **Mecánica de Fluidos, Hidrología y Evaluación y Manejo Ambiental**. Cada corte cierra con un entregable que vale la actividad final del corte (12 %, 12 % y 16 %).
+
+## El caso
+
+Cada equipo elige un tramo de canal real del área metropolitana de Barranquilla (un arroyo canalizado, un canal pluvial, un canal de riego o el canal de Villa Carolina) o un caso propuesto por el docente. El objetivo es responder:
+
+- ¿Qué caudal puede conducir el tramo y en qué régimen?
+- ¿Se erosiona, se sedimenta o se desborda con la creciente de diseño?
+- ¿Dónde se forman resaltos y cómo se disipa la energía?
+- ¿Qué alternativa de diseño es más sostenible y protege mejor el entorno?
+
+## Entregables
+
+| Corte | Entregable | Contenido | Semanas de apoyo |
+|---|---|---|---|
+| 1 (12 %) | **Diagnóstico** | Ubicación y fotografías; geometría de dos o tres secciones; caudal de diseño (de Hidrología o dado por el docente); elementos geométricos, energía específica, tirante crítico y régimen | 1 a 5 |
+| 2 (12 %) | **Diseño** | Tirante normal con Manning; revisión de velocidades permisibles y borde libre; rediseño del canal revestido o en tierra; estructura de control (compuerta o vertedero) y disipador con su resalto | 6 a 10 |
+| 3 (16 %) | **Modelación y sustentación** | Perfiles de flujo gradualmente variado para la creciente de diseño; tramo desbordado y medidas; alternativa con vegetación; impactos ambientales; informe técnico final y defensa oral | 11 a 15 |
+
+Si el laboratorio lo permite, reproduce en el canal de pendiente variable una versión a escala de tu caso (por ejemplo, el resalto aguas abajo de tu compuerta) y compárala con tus cálculos.
+
+## Rúbrica
+
+| Criterio | Nivel 4 (4,6 a 5,0) | Nivel 2 (3,0 a 3,7) |
+|---|---|---|
+| **Datos del caso** (15 %) | Geometría medida o tomada de planos, con fuente; caudal de diseño justificado | Datos supuestos sin justificar |
+| **Cálculos hidráulicos** (35 %) | Ecuaciones correctas con sus hipótesis; resultados verificados con el simulador o con código | Errores de unidades o de régimen que cambian las conclusiones |
+| **Diseño y alternativas** (20 %) | Al menos dos alternativas comparadas con criterios técnicos, económicos y ambientales | Una sola alternativa sin comparación |
+| **Análisis ambiental y de riesgo** (15 %) | Identifica impactos (inundación, erosión, sedimentación, hábitat) y propone medidas concretas | Menciones generales sin relación con los cálculos |
+| **Comunicación** (15 %) | Informe claro con planos, perfiles y tablas; defensa oral precisa; todos responden | Informe desordenado; un solo integrante domina la defensa |
+
+Los niveles 1 y 3 son intermedios entre los descritos. La nota individual puede ajustarse con la coevaluación del equipo y, si el equipo trabaja en un repositorio de GitHub, con el registro de contribuciones.
+
+## Formato del informe final
+
+1. Resumen (máximo 250 palabras).
+2. Descripción del caso y de los datos.
+3. Diagnóstico hidráulico del estado actual.
+4. Alternativas de diseño y su cálculo.
+5. Perfiles de flujo y verificación de borde libre.
+6. Análisis ambiental y de riesgo.
+7. Recomendación y conclusiones.
+8. Referencias (normas APA) y anexos de cálculo.

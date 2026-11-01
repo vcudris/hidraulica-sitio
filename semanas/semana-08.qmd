@@ -1,0 +1,206 @@
+---
+title: "Semana 8 · Momentum y resalto hidráulico"
+subtitle: "Unidad 2 · Flujo uniforme y resalto"
+---
+
+::: {.callout-note appearance="simple"}
+**RA2.** Diseñar y evaluar canales erosionables y no erosionables aplicando las ecuaciones de flujo uniforme (Manning y Chezy) y el principio de momentum, incluyendo el análisis del resalto hidráulico como disipador de energía.
+
+**Lo que debes lograr esta semana.** Aplicar la conservación de la cantidad de movimiento a un tramo corto de canal, calcular los tirantes conjugados de un resalto y clasificarlo según el número de Froude de llegada.
+:::
+
+## Antes de clase
+
+- Chow, cap. 3 (principio de momentum, fuerza específica) y cap. 15, *Resalto hidráulico y su uso como disipador de energía*.
+- Mott y Untener, cap. 14: numeral 14.8 (salto hidráulico).
+
+## Ideas clave
+
+**Por qué momentum y no energía.** En un resalto el agua pasa de rápida a lenta con mucha turbulencia: se pierde una cantidad de energía que no se conoce de antemano. Pero en un tramo corto y horizontal la fricción con el fondo es pequeña, así que **se conserva la cantidad de movimiento**.
+
+**Fuerza específica.** Es la suma del flujo de cantidad de movimiento y la fuerza hidrostática, por unidad de peso específico:
+
+$$
+M = \frac{Q^2}{g\,A} + \bar{y}\,A
+$$
+
+::: {.variables}
+- $M$: fuerza específica [m³].
+- $Q$: caudal [m³/s]; $A$: área mojada [m²].
+- $\bar{y}$: profundidad del centroide del área mojada bajo la superficie [m]; en la rectangular, $\bar{y} = y/2$.
+:::
+
+Como la curva $E$-$y$, la curva $M$-$y$ tiene un mínimo en el **tirante crítico**. A cada tirante supercrítico $y_1$ le corresponde un tirante subcrítico $y_2$ con la misma $M$: son los **tirantes conjugados**. El resalto une $y_1$ con $y_2$.
+
+**Ecuación de Bélanger** (canal rectangular horizontal):
+
+$$
+\frac{y_2}{y_1} = \frac{1}{2}\left(\sqrt{1 + 8\,Fr_1^2} - 1\right) \qquad Fr_1 = \frac{V_1}{\sqrt{g\,y_1}}
+$$
+
+::: {.variables}
+- $y_1$: tirante antes del resalto, supercrítico [m].
+- $y_2$: tirante después del resalto, subcrítico [m].
+- $Fr_1$: número de Froude antes del resalto [—].
+- $V_1$: velocidad antes del resalto [m/s].
+:::
+
+**Pérdida de energía y longitud** (rectangular):
+
+$$
+\Delta E = E_1 - E_2 = \frac{(y_2 - y_1)^3}{4\,y_1\,y_2} \qquad L_j \approx 6{,}9\,(y_2 - y_1)
+$$
+
+::: {.variables}
+- $\Delta E$: energía que el resalto disipa en turbulencia y calor [m].
+- $L_j$: longitud del resalto [m]; la relación 6,9 es una aproximación de las curvas del USBR, válida para Froude entre 4,5 y 13 aproximadamente.
+:::
+
+**Tipos de resalto (USBR).**
+
+| $Fr_1$ | Tipo | Cómo se ve |
+|---|---|---|
+| 1 a 1,7 | Ondular | Superficie con ondas, sin remolino |
+| 1,7 a 2,5 | Débil | Pequeños remolinos, poca pérdida de energía |
+| 2,5 a 4,5 | Oscilante | Chorro que oscila entre el fondo y la superficie; produce ondas que dañan las orillas. Se evita |
+| 4,5 a 9 | Estable | Bien formado, poco sensible al tirante de aguas abajo. El mejor para disipar |
+| Más de 9 | Fuerte | Muy turbulento, superficie agitada, gran disipación |
+
+## Simulador: fuerza específica y resalto
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, geometria, energia, froude, momentum, conjugado, tiranteCritico, tipoResalto, belanger} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof forma = Inputs.radio(["rectangular", "trapecial"], {value: "rectangular", label: "Forma"})
+viewof b = Inputs.range([0.3, 10], {value: 1, step: 0.1, label: "Ancho de fondo b (m)"})
+viewof z = Inputs.range([0, 3], {value: 1, step: 0.25, label: "Talud z (z:1), trapecial"})
+viewof Q = Inputs.range([0.1, 30], {value: 3, step: 0.1, label: "Caudal Q (m³/s)"})
+viewof yRel = Inputs.range([0.15, 0.98], {value: 0.35, step: 0.01, label: "Tirante de llegada y₁ / yc"})
+```
+
+```{ojs}
+sec = ({forma, b, z})
+yc = tiranteCritico(sec, Q)
+y1 = yRel * yc
+y2 = conjugado(sec, Q, y1)
+Fr1 = froude(sec, Q, y1)
+M1 = momentum(sec, Q, y1)
+dE = energia(sec, Q, y1) - energia(sec, Q, y2)
+Lj = 6.9 * (y2 - y1)
+curvaM = d3.range(0, 301).map((i) => {
+  const y = y1 * 0.7 + (y2 * 1.3 - y1 * 0.7) * i / 300;
+  return {y, M: momentum(sec, Q, y)};
+})
+perfilJ = d3.range(0, 201).map((i) => {
+  const x = -0.6 * Lj + Math.max(2.2 * Lj, 5 * y2) * i / 200, t =Math.min(Math.max(x / Lj, 0), 1);
+  return {x, y: y1 + (y2 - y1) * (1 - (1 - t) ** 2.2)};
+})
+```
+
+```{ojs}
+Plot.plot({
+  height: 320,
+  x: {label: "Fuerza específica M (m³)", grid: true},
+  y: {label: "Tirante y (m)", grid: true, domain: [0, y2 * 1.3]},
+  marks: [
+    Plot.line(curvaM, {x: "M", y: "y", stroke: "steelblue", strokeWidth: 2.5}),
+    Plot.ruleX([M1], {stroke: "darkorange", strokeDasharray: "6,4"}),
+    Plot.ruleY([yc], {stroke: "darkorange", strokeOpacity: 0.4}),
+    Plot.dot([{M: M1, y: y1, t: "y₁"}, {M: M1, y: y2, t: "y₂"}], {x: "M", y: "y", r: 6, fill: "steelblue"}),
+    Plot.text([{M: M1, y: y1, t: "y₁"}, {M: M1, y: y2, t: "y₂"}], {x: "M", y: "y", text: "t", dx: 12}),
+  ],
+  caption: "Curva M-y. Los tirantes conjugados tienen la misma fuerza específica (línea naranja).",
+})
+```
+
+```{ojs}
+Plot.plot({
+  height: 220,
+  x: {label: "Distancia (m)", domain: [-0.6 * Lj, -0.6 * Lj + Math.max(2.2 * Lj, 5 * y2)]},
+  y: {label: "y (m)", domain: [0, y2 * 1.25]},
+  marks: [
+    Plot.areaY(perfilJ, {x: "x", y: "y", fill: "steelblue", fillOpacity: 0.35}),
+    Plot.line(perfilJ, {x: "x", y: "y", stroke: "steelblue", strokeWidth: 2}),
+    Plot.ruleY([0], {strokeWidth: 2}),
+    Plot.ruleX([0, Lj], {stroke: "gray", strokeDasharray: "3,3"}),
+  ],
+  caption: "Resalto con escala vertical exagerada; las cotas son reales. La forma de la superficie dentro del resalto es ilustrativa.",
+})
+```
+
+```{ojs}
+resultados([
+  ["Tirante crítico, yc", cs(yc), "m"],
+  ["Llegada: y₁", cs(y1), "m", `V₁ = ${cs(Q / geometria(sec, y1).A)} m/s`],
+  ["Froude de llegada, Fr₁", cs(Fr1), "", `resalto ${tipoResalto(Fr1)}`],
+  ["Tirante conjugado, y₂", cs(y2), "m", forma === "rectangular" ? `Bélanger: ${cs(belanger(y1, Fr1))} m` : ""],
+  ["Relación y₂/y₁", cs(y2 / y1), ""],
+  ["Pérdida de energía, ΔE", cs(dE), "m", `${cs(100 * dE / energia(sec, Q, y1), 3)} % de E₁`],
+  ["Longitud aproximada, Lj ≈ 6,9 (y₂ − y₁)", cs(Lj), "m"],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Acerca $y_1$ a $y_c$. ¿Qué pasa con $y_2$, con la pérdida de energía y con el tipo de resalto?
+2. Busca el rango de $y_1$ que produce un resalto estable ($4{,}5 < Fr_1 < 9$). ¿Qué porcentaje de la energía se disipa?
+3. Cambia a sección trapecial con el mismo caudal. ¿Es mayor o menor la relación $y_2/y_1$ que en la rectangular?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Tirante conjugado con Bélanger",
+  generar: () => ({q: azar(1, 8, 0.5), y1: azar(0.15, 0.6, 0.01)}),
+  enunciado: ({q, y1}) => `En un canal rectangular horizontal con <strong>q = ${cs(q)} m²/s</strong> se forma un resalto. El tirante antes del resalto es <strong>${cs(y1)} m</strong>. Calcula Fr₁, el tirante conjugado y la pérdida de energía.`,
+  respuestas: [
+    {etiqueta: "Fr₁ =", unidad: "", valor: ({q, y1}) => q / (y1 * Math.sqrt(9.81 * y1))},
+    {etiqueta: "y₂ =", unidad: "m", valor: ({q, y1}) => belanger(y1, q / (y1 * Math.sqrt(9.81 * y1)))},
+    {etiqueta: "ΔE =", unidad: "m", valor: ({q, y1}) => { const y2 = belanger(y1, q / (y1 * Math.sqrt(9.81 * y1))); return (y2 - y1) ** 3 / (4 * y1 * y2); }},
+  ],
+  solucion: ({q, y1}) => {
+    const Fr = q / (y1 * Math.sqrt(9.81 * y1)), y2 = belanger(y1, Fr);
+    return `<ol>
+      <li>V₁ = q/y₁ = ${cs(q / y1)} m/s; Fr₁ = V₁/√(g y₁) = <strong>${cs(Fr)}</strong> (resalto ${tipoResalto(Fr)}).</li>
+      <li>y₂ = (y₁/2)(√(1 + 8 Fr₁²) − 1) = (${cs(y1)}/2)(√(1 + 8·${cs(Fr * Fr, 4)}) − 1) = <strong>${cs(y2)} m</strong>.</li>
+      <li>ΔE = (y₂ − y₁)³/(4 y₁ y₂) = ${cs(y2 - y1)}³/(4·${cs(y1)}·${cs(y2)}) = <strong>${cs((y2 - y1) ** 3 / (4 * y1 * y2))} m</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Tipo de resalto",
+  generar: () => ({Fr: elegir([1.4, 2.1, 3.2, 4, 5.5, 7.5, 10.5]) + azar(-0.15, 0.15, 0.05)}),
+  enunciado: ({Fr}) => `El número de Froude justo antes de un resalto es <strong>${cs(Fr)}</strong>. Según la clasificación del USBR, ¿qué tipo de resalto se forma?`,
+  respuestas: [{etiqueta: "Tipo", opciones: ["ondular", "débil", "oscilante", "estable", "fuerte"], valor: ({Fr}) => tipoResalto(Fr)}],
+  solucion: ({Fr}) => `<p>Fr₁ = ${cs(Fr)} está en el rango del resalto <strong>${tipoResalto(Fr)}</strong>: ondular 1 a 1,7; débil 1,7 a 2,5; oscilante 2,5 a 4,5; estable 4,5 a 9; fuerte más de 9.</p>`,
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Del tirante de aguas abajo al de aguas arriba",
+  generar: () => ({q: azar(2, 10, 0.5), k: azar(1.6, 2.6, 0.1)}),
+  enunciado: ({q, k}) => {
+    const y2 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3));
+    return `Aguas abajo de un resalto en un canal rectangular el tirante es <strong>${cs(y2)} m</strong> con <strong>q = ${cs(q)} m²/s</strong>. ¿Qué tirante tiene el flujo antes del resalto? (Bélanger también sirve al revés, con Fr₂.)`;
+  },
+  respuestas: [{etiqueta: "y₁ =", unidad: "m", valor: ({q, k}) => { const y2 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3)); return belanger(y2, q / (y2 * Math.sqrt(9.81 * y2))); }}],
+  solucion: ({q, k}) => {
+    const y2 = Number((k * Math.cbrt(q * q / 9.81)).toPrecision(3)), Fr2 = q / (y2 * Math.sqrt(9.81 * y2));
+    return `<ol>
+      <li>Fr₂ = q/(y₂√(g y₂)) = ${cs(Fr2)}.</li>
+      <li>y₁ = (y₂/2)(√(1 + 8 Fr₂²) − 1) = <strong>${cs(belanger(y2, Fr2))} m</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Taller de momentum y resalto:** tirantes conjugados en secciones rectangulares y trapeciales.
+- **Tarea 2 en GitHub:** agrega Bélanger, pérdida y tipo de resalto en `corte2.py`.

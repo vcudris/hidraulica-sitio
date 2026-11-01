@@ -1,0 +1,31 @@
+---
+title: "Simuladores"
+subtitle: "Todos corren en tu navegador: no instalas nada y no se envían datos a ningún servidor"
+---
+
+| Simulador | Qué explorar | Unidad | Semana |
+|---|---|---|---|
+| Sección del canal | $A$, $P$, $T$, $R$, $D$ de secciones rectangular, trapecial, triangular y circular, dibujadas a escala; Reynolds | U1 | [1](semanas/semana-01.qmd#simulador-sección-del-canal) |
+| Curva de energía específica | Curva $E$-$y$, tirante crítico, tirantes alternos y Froude de cada rama | U1 | [2](semanas/semana-02.qmd#simulador-curva-de-energía-específica) |
+| Tirante crítico y régimen | $y_c$ en cualquier sección, Froude en función del tirante, caso del colector circular al 60 % | U1 | [3](semanas/semana-03.qmd#simulador-tirante-crítico-y-régimen) |
+| Escalón y contracción | Paso por un escalón o un estrechamiento, estrangulamiento y represamiento aguas arriba | U1 | [4](semanas/semana-04.qmd#simulador-escalón-y-contracción-en-un-canal-de-laboratorio) |
+| Perfil de velocidad | Ley logarítmica, lecturas a 0,2, 0,6 y 0,8 del tirante, velocidad media | U1 | [5](semanas/semana-05.qmd#simulador-perfil-de-velocidad-en-una-vertical) |
+| Vertedero de aforo | Curvas de calibración de vertederos triangular y rectangular, sensibilidad a la lectura | U1 | [5](semanas/semana-05.qmd#simulador-vertedero-de-aforo) |
+| Tirante normal | Manning y Chezy en cuatro secciones, curva de descarga, pendiente suave o fuerte | U2 | [6](semanas/semana-06.qmd#simulador-tirante-normal) |
+| Diseño de un canal trapecial | Sección óptima, velocidad mínima y máxima permisible, Froude, fuerza tractiva y borde libre | U2 | [7](semanas/semana-07.qmd#simulador-diseño-de-un-canal-trapecial) |
+| Fuerza específica y resalto | Curva $M$-$y$, conjugados, pérdida, longitud y tipo de resalto | U2 | [8](semanas/semana-08.qmd#simulador-fuerza-específica-y-resalto) |
+| Disipador al pie de una rápida | Resalto al pie, barrido o ahogado; eficiencia, potencia disipada, tanque sugerido | U2 | [9](semanas/semana-09.qmd#simulador-disipador-al-pie-de-una-rápida) |
+| Compuerta deslizante | Caudal, $C_d$, vena contracta, fuerza por momentum y resalto aguas abajo | U2 | [10](semanas/semana-10.qmd#simulador-compuerta-deslizante) |
+| Signo de dy/dx | Ecuación dinámica, zonas y tipos de pendiente, los perfiles M, S, H y A | U3 | [11](semanas/semana-11.qmd) |
+| Perfiles con sus controles | Seis casos M y S calculados por paso directo, con la tabla del método | U3 | [12](semanas/semana-12.qmd#simulador-perfiles-con-sus-controles) |
+| Remanso aguas arriba de una presa | Perfil M1, longitud del remanso y tramo desbordado | U3 | [13](semanas/semana-13.qmd#simulador-remanso-aguas-arriba-de-una-presa) |
+| Cauce con llanuras de inundación | Caudal por subsecciones frente a sección única, vegetación y $n$ de Horton | U3 | [14](semanas/semana-14.qmd#simulador-cauce-con-llanuras-de-inundación) |
+| Compuerta en un canal de pendiente suave | M1, M3, ubicación del resalto y flujo uniforme en un solo perfil | U3 | [15](semanas/semana-15.qmd#simulador-compuerta-en-un-canal-de-pendiente-suave) |
+
+## Cómo usarlos en clase
+
+- **Predice antes de mover:** pide a los estudiantes que anoten qué creen que pasará antes de mover el control. La discusión sale de las predicciones que fallan.
+- **Verifica los ejercicios del libro y del laboratorio:** resuelve a mano y luego reproduce los datos en el simulador para comprobar el resultado.
+- **Preguntas para explorar:** cada simulador trae dos o tres preguntas. Sirven como actividad de inicio o de cierre.
+
+Los cálculos usan $g = 9{,}81$ m/s², agua a unos 20 °C y $\alpha = 1$. Los valores de $n$ y de velocidad permisible son valores de diseño usuales de las tablas de Chow; para un proyecto real, revisa los rangos completos. Los perfiles se calculan con el método del paso directo; dentro del resalto la forma de la superficie es solo ilustrativa.

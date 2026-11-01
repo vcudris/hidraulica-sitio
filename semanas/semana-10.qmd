@@ -1,0 +1,205 @@
+---
+title: "Semana 10 · Compuertas"
+subtitle: "Unidad 2 · Flujo uniforme y resalto"
+---
+
+::: {.callout-note appearance="simple"}
+**RA2.** Diseñar y evaluar canales erosionables y no erosionables aplicando las ecuaciones de flujo uniforme (Manning y Chezy) y el principio de momentum, incluyendo el análisis del resalto hidráulico como disipador de energía.
+
+**Lo que debes lograr esta semana.** Calcular el caudal que pasa bajo una compuerta deslizante, la fuerza que el agua ejerce sobre ella por momentum y el resalto que se forma aguas abajo.
+
+**Laboratorio 4 de 6:** resalto hidráulico y cantidad de movimiento con compuerta. **Parcial 2** tipo Saber Pro al cierre de la semana.
+:::
+
+## Antes de clase
+
+- Chow, cap. 3 (aplicación del momentum a una compuerta) y cap. 15 (resalto aguas abajo de una compuerta).
+- Repasa la energía específica ([semana 2](semana-02.qmd)) y la fuerza específica ([semana 8](semana-08.qmd)).
+
+## Ideas clave
+
+**Compuerta con descarga libre.** El agua pasa bajo la compuerta y se contrae: a una distancia cercana a la abertura se forma la **vena contracta**, con tirante
+
+$$
+y_2 = C_c\,a
+$$
+
+::: {.variables}
+- $y_2$: tirante en la vena contracta, supercrítico [m].
+- $C_c$: coeficiente de contracción, cerca de 0,61 para compuertas planas verticales [—].
+- $a$: abertura de la compuerta [m].
+:::
+
+**Caudal.** Entre la sección 1 aguas arriba y la vena contracta se conserva la energía (contracción acelerada, pocas pérdidas). Se resume con un coeficiente de descarga:
+
+$$
+Q = C_d\,b\,a\,\sqrt{2 g\,y_1} \qquad C_d = \frac{C_c}{\sqrt{1 + C_c\,a/y_1}}
+$$
+
+::: {.variables}
+- $Q$: caudal [m³/s]; $b$: ancho de la compuerta y del canal [m].
+- $y_1$: tirante aguas arriba de la compuerta [m].
+- $C_d$: coeficiente de descarga [—]; entre 0,55 y 0,60 en casos usuales.
+:::
+
+**Fuerza sobre la compuerta.** La energía no sirve aquí, pero el momentum sí. En el volumen de control entre 1 y 2, la compuerta empuja al agua hacia atrás:
+
+$$
+F = \frac{\gamma\,b}{2}\left(y_1^2 - y_2^2\right) - \rho\,Q\,(V_2 - V_1)
+$$
+
+::: {.variables}
+- $F$: fuerza horizontal del agua sobre la compuerta [N].
+- $\gamma$: peso específico del agua [N/m³]; $\rho$: densidad, 1000 kg/m³.
+- $V_1$, $V_2$: velocidades medias aguas arriba y en la vena contracta [m/s].
+:::
+
+La fuerza es **menor** que el empuje hidrostático que tendría la compuerta cerrada, porque parte de la presión se convierte en velocidad.
+
+**Resalto aguas abajo.** La vena contracta es supercrítica; si el canal de aguas abajo es de pendiente suave, se forma un resalto con conjugado $y_3$. Si el tirante de aguas abajo supera $y_3$, el resalto se ahoga contra la compuerta y la fórmula de descarga libre deja de valer.
+
+## Simulador: compuerta deslizante
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, froude, conjugado, tipoResalto, fuerzaCompuerta, belanger, GAMMA} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof b = Inputs.range([0.1, 6], {value: 0.3, step: 0.05, label: "Ancho b (m)"})
+viewof y1 = Inputs.range([0.05, 4], {value: 0.3, step: 0.005, label: "Tirante aguas arriba y₁ (m)"})
+viewof aRel = Inputs.range([0.05, 0.6], {value: 0.2, step: 0.01, label: "Abertura a / y₁"})
+viewof Cc = Inputs.range([0.58, 0.65], {value: 0.61, step: 0.005, label: "Coeficiente de contracción Cc"})
+```
+
+```{ojs}
+a = aRel * y1
+y2 = Cc * a
+V2 = Math.sqrt(2 * 9.81 * (y1 - y2) / (1 - (y2 / y1) ** 2))
+Q = b * y2 * V2
+V1 = Q / (b * y1)
+Cd = Cc / Math.sqrt(1 + Cc * a / y1)
+sec = ({forma: "rectangular", b})
+Fr2 = froude(sec, Q, y2)
+y3 = conjugado(sec, Q, y2)
+F = fuerzaCompuerta(Q, b, y1, y2)
+Fest = GAMMA * b * (y1 - a) ** 2 / 2
+largo = 6.9 * (y3 - y2)
+xs = (t) => t * y1
+perfilC = [
+  ...d3.range(0, 21).map((i) => ({x: xs(-4 + 4 * i / 20), y: y1})),
+  ...d3.range(0, 21).map((i) => ({x: xs(0.02) + 1.5 * a * i / 20, y: a + (y2 - a) * (i / 20) ** 0.7})),
+  {x: xs(0.02) + 1.5 * a + y1, y: y2},
+  ...d3.range(0, 31).map((i) => ({x: xs(0.02) + 1.5 * a + y1 + largo * i / 30, y: y2 + (y3 - y2) * (1 - (1 - i / 30) ** 2.2)})),
+  {x: xs(0.02) + 1.5 * a + y1 + largo + 2 * y3, y: y3},
+]
+```
+
+```{ojs}
+Plot.plot({
+  height: 220,
+  x: {label: "Distancia (m)"},
+  y: {label: "y (m)", domain: [0, Math.max(y1, y3) * 1.25]},
+  marks: [
+    Plot.areaY(perfilC, {x: "x", y: "y", fill: "steelblue", fillOpacity: 0.35}),
+    Plot.line(perfilC, {x: "x", y: "y", stroke: "steelblue", strokeWidth: 2}),
+    Plot.rect([{x1: 0, x2: xs(0.04), y1: a, y2: Math.max(y1, y3) * 1.2}], {x1: "x1", x2: "x2", y1: "y1", y2: "y2", fill: "currentColor"}),
+    Plot.ruleY([0], {strokeWidth: 2}),
+  ],
+  caption: "Compuerta (negro), vena contracta y resalto libre aguas abajo, con escala vertical exagerada. La forma del resalto es ilustrativa.",
+})
+```
+
+```{ojs}
+resultados([
+  ["Abertura, a", cs(a), "m"],
+  ["Vena contracta, y₂ = Cc a", cs(y2), "m", `V₂ = ${cs(V2)} m/s, Fr₂ = ${cs(Fr2)}`],
+  ["Caudal, Q", cs(Q), "m³/s", `${cs(Q * 1000)} L/s`],
+  ["Coeficiente de descarga, Cd", cs(Cd), ""],
+  ["Fuerza sobre la compuerta (momentum)", cs(F), "N", `${cs(F / b)} N por metro de ancho`],
+  ["Empuje hidrostático con el agua quieta", cs(Fest), "N", `la fuerza real es el ${cs(100 * F / Fest)} %`],
+  ["Conjugado aguas abajo, y₃", cs(y3), "m", `resalto ${tipoResalto(Fr2)}; si aguas abajo hay más de ${cs(y3)} m, se ahoga`],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Abre la compuerta poco a poco. ¿Cómo cambian $C_d$ y la fuerza sobre la compuerta?
+2. ¿Por qué la fuerza calculada por momentum es menor que el empuje hidrostático? ¿Qué pasaría con $F$ si la compuerta se cierra del todo?
+3. En el laboratorio 4 se mide $F$ indirectamente. Con $b = 0{,}3$ m, $y_1 = 0{,}3$ m y $a = 0{,}06$ m, ¿qué fuerza esperas en newtons?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Caudal bajo una compuerta",
+  generar: () => ({b: azar(0.5, 4, 0.25), a: azar(0.1, 0.6, 0.05), y1: azar(1, 3, 0.1)}),
+  enunciado: ({b, a, y1}) => `Una compuerta deslizante de <strong>${cs(b)} m</strong> de ancho tiene una abertura de <strong>${cs(a)} m</strong> y el tirante aguas arriba es <strong>${cs(y1)} m</strong>. Con C<sub>c</sub> = 0,61, calcula C<sub>d</sub>, el caudal y el tirante en la vena contracta.`,
+  respuestas: [
+    {etiqueta: "Cd =", unidad: "", valor: ({a, y1}) => 0.61 / Math.sqrt(1 + 0.61 * a / y1)},
+    {etiqueta: "Q =", unidad: "m³/s", valor: ({b, a, y1}) => 0.61 / Math.sqrt(1 + 0.61 * a / y1) * b * a * Math.sqrt(19.62 * y1)},
+    {etiqueta: "y₂ =", unidad: "m", valor: ({a}) => 0.61 * a},
+  ],
+  solucion: ({b, a, y1}) => {
+    const Cd = 0.61 / Math.sqrt(1 + 0.61 * a / y1);
+    return `<ol>
+      <li>C_d = C_c/√(1 + C_c a/y₁) = 0,61/√(1 + 0,61·${cs(a)}/${cs(y1)}) = <strong>${cs(Cd)}</strong>.</li>
+      <li>Q = C_d b a √(2 g y₁) = ${cs(Cd)}·${cs(b)}·${cs(a)}·√(19,62·${cs(y1)}) = <strong>${cs(Cd * b * a * Math.sqrt(19.62 * y1))} m³/s</strong>.</li>
+      <li>y₂ = C_c a = <strong>${cs(0.61 * a)} m</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Fuerza sobre la compuerta",
+  generar: () => ({b: azar(0.5, 3, 0.25), y1: azar(1, 3, 0.1), y2: azar(0.1, 0.4, 0.02)}),
+  enunciado: ({b, y1, y2}) => {
+    const q = y2 * Math.sqrt(19.62 * (y1 - y2) / (1 - (y2 / y1) ** 2));
+    return `Aguas arriba de una compuerta de <strong>${cs(b)} m</strong> de ancho el tirante es <strong>${cs(y1)} m</strong> y en la vena contracta es <strong>${cs(y2)} m</strong>. El caudal unitario es <strong>q = ${cs(q)} m²/s</strong>. Calcula la fuerza horizontal del agua sobre la compuerta.`;
+  },
+  respuestas: [{etiqueta: "F =", unidad: "kN", valor: ({b, y1, y2}) => {
+    const q = Number((y2 * Math.sqrt(19.62 * (y1 - y2) / (1 - (y2 / y1) ** 2))).toPrecision(3));
+    return fuerzaCompuerta(q * b, b, y1, y2) / 1000;
+  }}],
+  solucion: ({b, y1, y2}) => {
+    const q = Number((y2 * Math.sqrt(19.62 * (y1 - y2) / (1 - (y2 / y1) ** 2))).toPrecision(3)), Q = q * b;
+    const hid = 9810 * b * (y1 * y1 - y2 * y2) / 2, mom = 1000 * Q * (q / y2 - q / y1);
+    return `<ol>
+      <li>Q = q b = ${cs(Q)} m³/s; V₁ = q/y₁ = ${cs(q / y1)} m/s; V₂ = q/y₂ = ${cs(q / y2)} m/s.</li>
+      <li>Fuerzas hidrostáticas netas: γ b (y₁² − y₂²)/2 = ${cs(hid / 1000, 4)} kN.</li>
+      <li>Cambio de momentum: ρ Q (V₂ − V₁) = ${cs(mom / 1000, 4)} kN.</li>
+      <li>F = ${cs(hid / 1000, 4)} − ${cs(mom / 1000, 4)} = <strong>${cs((hid - mom) / 1000)} kN</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "¿Se ahoga el resalto?",
+  generar: () => ({q: azar(0.5, 4, 0.1), y2: azar(0.08, 0.35, 0.01), k: azar(0.7, 1.3, 0.05)}),
+  enunciado: ({q, y2, k}) => {
+    const y3 = belanger(y2, q / (y2 * Math.sqrt(9.81 * y2)));
+    return `Bajo una compuerta sale un chorro con <strong>q = ${cs(q)} m²/s</strong> y <strong>y₂ = ${cs(y2)} m</strong>. El canal de aguas abajo impone un tirante de <strong>${cs(k * y3)} m</strong>. Calcula el conjugado y₃ y decide qué tipo de resalto se forma.`;
+  },
+  respuestas: [
+    {etiqueta: "y₃ =", unidad: "m", valor: ({q, y2}) => belanger(y2, q / (y2 * Math.sqrt(9.81 * y2)))},
+    {etiqueta: "Resultado", opciones: ["resalto libre", "resalto ahogado"], valor: ({k}) => k > 1 ? "resalto ahogado" : "resalto libre"},
+  ],
+  solucion: ({q, y2, k}) => {
+    const Fr = q / (y2 * Math.sqrt(9.81 * y2)), y3 = belanger(y2, Fr);
+    return `<ol>
+      <li>Fr₂ = q/(y₂√(g y₂)) = ${cs(Fr)}.</li>
+      <li>y₃ = (y₂/2)(√(1 + 8 Fr₂²) − 1) = <strong>${cs(y3)} m</strong>.</li>
+      <li>El tirante de aguas abajo (${cs(k * y3)} m) es ${k > 1 ? "mayor" : "menor o igual"} que y₃: <strong>${k > 1 ? "resalto ahogado contra la compuerta" : "resalto libre; si es menor, se forma más lejos, donde el chorro se ha frenado"}</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Informe del laboratorio 4:** caudal, $C_d$, fuerza sobre la compuerta y conjugados medidos contra los calculados.
+- **Parcial 2:** semanas 6 a 10.
+- **Tarea 2 en GitHub:** termina `corte2.py` antes del parcial.

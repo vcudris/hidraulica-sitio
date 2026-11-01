@@ -1,0 +1,168 @@
+---
+title: "Semana 9 · El resalto como disipador de energía"
+subtitle: "Unidad 2 · Flujo uniforme y resalto"
+---
+
+::: {.callout-note appearance="simple"}
+**RA2.** Diseñar y evaluar canales erosionables y no erosionables aplicando las ecuaciones de flujo uniforme (Manning y Chezy) y el principio de momentum, incluyendo el análisis del resalto hidráulico como disipador de energía.
+
+**Lo que debes lograr esta semana.** Evaluar si un resalto queda donde se necesita, al pie de una rápida o un vertedero, comparando su tirante conjugado con el tirante de aguas abajo, y calcular la energía y la potencia que disipa.
+
+**Laboratorio 3 de 6:** flujo uniforme (Manning y Chezy) con rugosidad y pendiente variables.
+:::
+
+## Antes de clase
+
+- Chow, cap. 15: el resalto como disipador de energía, posición del resalto y tanques amortiguadores.
+- Repasa los tipos de resalto de la [semana 8](semana-08.qmd).
+
+## Ideas clave
+
+**Para qué sirve.** Al pie de un vertedero, una rápida o una compuerta el agua llega muy rápida (supercrítica) y erosiona el cauce. Un resalto convierte esa velocidad en turbulencia y devuelve el flujo al régimen subcrítico, protegiendo el canal de aguas abajo.
+
+**Eficiencia y potencia disipada.**
+
+$$
+\eta = \frac{E_2}{E_1} \qquad P = \gamma\,Q\,\Delta E
+$$
+
+::: {.variables}
+- $\eta$: eficiencia del resalto, fracción de la energía que sigue después de él [—].
+- $E_1$, $E_2$: energía específica antes y después del resalto [m].
+- $P$: potencia disipada [W].
+- $\gamma$: peso específico del agua, 9810 N/m³; $Q$: caudal [m³/s]; $\Delta E = E_1 - E_2$ [m].
+:::
+
+**Posición del resalto.** Aguas abajo, el canal impone su propio tirante $y_t$ (normalmente el tirante normal). El resalto se forma donde el conjugado del flujo supercrítico coincide con $y_t$:
+
+| Caso | Qué pasa | Qué hacer |
+|---|---|---|
+| $y_t \approx y_2$ | El resalto se forma al pie de la estructura | Situación ideal |
+| $y_t < y_2$ | **Resalto barrido:** el agua rápida avanza aguas abajo hasta que la fricción la frena; puede erosionar un tramo largo | Bajar el piso con un tanque amortiguador, poner un umbral o bloques |
+| $y_t > y_2$ | **Resalto ahogado:** el resalto se sumerge contra la estructura | Funciona, pero disipa menos y el chorro sigue rápido por el fondo |
+
+**Tanques amortiguadores del USBR.** Se eligen según $Fr_1$: tipo IV para $2{,}5 < Fr_1 < 4{,}5$; tipo III para $Fr_1 > 4{,}5$ con $V_1 < 18$ m/s; tipo II para velocidades mayores. Con $Fr_1 < 1{,}7$ no hace falta tanque.
+
+**Rugosidad medida en el laboratorio.** Si en un canal en flujo uniforme se miden $Q$, $y$ y $S_0$, se despeja $n$ de Manning:
+
+$$
+n = \frac{A\,R^{2/3}\,S_0^{1/2}}{Q}
+$$
+
+## Simulador: disipador al pie de una rápida
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, energia, froude, conjugado, tiranteCritico, tipoResalto, belanger, GAMMA} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof b = Inputs.range([1, 20], {value: 5, step: 0.5, label: "Ancho del canal b (m)"})
+viewof Q = Inputs.range([1, 150], {value: 30, step: 1, label: "Caudal Q (m³/s)"})
+viewof y1 = Inputs.range([0.1, 2], {value: 0.4, step: 0.01, label: "Tirante al pie de la rápida y₁ (m)"})
+viewof yt = Inputs.range([0.3, 8], {value: 2.8, step: 0.05, label: "Tirante de aguas abajo yₜ (m)"})
+```
+
+```{ojs}
+sec = ({forma: "rectangular", b})
+yc = tiranteCritico(sec, Q)
+Fr1 = froude(sec, Q, y1)
+V1 = Q / (b * y1)
+y2 = y1 < yc ? conjugado(sec, Q, y1) : NaN
+E1 = energia(sec, Q, y1)
+E2 = energia(sec, Q, y2)
+caso = !Number.isFinite(y2) ? "no hay resalto: el flujo de llegada ya es subcrítico"
+  : Math.abs(yt - y2) / y2 <= 0.05 ? "resalto al pie de la estructura"
+  : yt < y2 ? "resalto barrido aguas abajo" : "resalto ahogado"
+tanque = Fr1 < 1.7 ? "no hace falta tanque" : Fr1 < 2.5 ? "tanque simple, sin accesorios"
+  : Fr1 < 4.5 ? "tanque USBR tipo IV" : V1 < 18 ? "tanque USBR tipo III" : "tanque USBR tipo II"
+```
+
+```{ojs}
+Plot.plot({
+  height: 230,
+  x: {label: "Tirante (m)", domain: [0, Math.max(y2 || 0, yt) * 1.2]},
+  y: {label: null, domain: ["y₁ (llegada)", "y₂ (conjugado)", "yₜ (aguas abajo)"]},
+  marks: [
+    Plot.barX([
+      {k: "y₁ (llegada)", v: y1},
+      {k: "y₂ (conjugado)", v: Number.isFinite(y2) ? y2 : 0},
+      {k: "yₜ (aguas abajo)", v: yt},
+    ], {x: "v", y: "k", fill: (d) => d.k.startsWith("yₜ") ? "seagreen" : "steelblue", fillOpacity: 0.7}),
+    Plot.ruleX([yc], {stroke: "darkorange", strokeDasharray: "6,4"}),
+    Plot.text([{x: yc, k: "y₁ (llegada)"}], {x: "x", y: "k", text: () => "yc", dx: 6, dy: -14, fill: "darkorange"}),
+  ],
+  marginLeft: 120,
+  caption: "Comparación del conjugado requerido con el tirante que impone el canal de aguas abajo.",
+})
+```
+
+```{ojs}
+resultados([
+  ["Froude de llegada, Fr₁", cs(Fr1), "", `V₁ = ${cs(V1)} m/s; resalto ${tipoResalto(Fr1)}`],
+  ["Tirante conjugado requerido, y₂", cs(y2), "m"],
+  ["Posición del resalto", caso, ""],
+  ["Profundización aproximada del piso", Number.isFinite(y2) && yt < y2 ? cs(y2 - yt) : "no hace falta", "m", "primera estimación: luego se verifica"],
+  ["Pérdida de energía, ΔE", cs(E1 - E2), "m"],
+  ["Eficiencia, E₂/E₁", cs(E2 / E1), "", `se disipa el ${cs(100 * (1 - E2 / E1))} %`],
+  ["Potencia disipada, γQΔE", cs(GAMMA * Q * (E1 - E2) / 1000), "kW"],
+  ["Longitud del resalto ≈ 6,9 (y₂ − y₁)", cs(6.9 * (y2 - y1)), "m"],
+  ["Estructura sugerida", tanque, ""],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Baja $y_t$ hasta que el resalto quede barrido. ¿Cuánto habría que profundizar el piso del tanque para fijarlo al pie?
+2. Mantén $Q$ y aumenta $y_1$. ¿Sube o baja la eficiencia? ¿Qué resalto disipa mejor, uno con $Fr_1 = 3$ o uno con $Fr_1 = 8$?
+3. Calcula la potencia disipada con $Q = 100$ m³/s y $Fr_1 \approx 7$. ¿A cuántas casas alcanzaría si se pudiera aprovechar (una casa usa en promedio 1 kW)?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Potencia disipada en un resalto",
+  generar: () => ({b: azar(2, 10, 0.5), q: azar(2, 10, 0.5), y1: azar(0.2, 0.6, 0.02)}),
+  enunciado: ({b, q, y1}) => `Al pie de un vertedero de <strong>${cs(b)} m</strong> de ancho pasa <strong>q = ${cs(q)} m²/s</strong> con <strong>y₁ = ${cs(y1)} m</strong>. Se forma un resalto libre. Calcula y₂, la eficiencia E₂/E₁ y la potencia disipada.`,
+  respuestas: [
+    {etiqueta: "y₂ =", unidad: "m", valor: ({q, y1}) => belanger(y1, q / (y1 * Math.sqrt(9.81 * y1)))},
+    {etiqueta: "E₂/E₁ =", unidad: "", valor: ({q, y1}) => { const y2 = belanger(y1, q / (y1 * Math.sqrt(9.81 * y1))); return (y2 + q * q / (19.62 * y2 * y2)) / (y1 + q * q / (19.62 * y1 * y1)); }},
+    {etiqueta: "P =", unidad: "kW", valor: ({b, q, y1}) => { const y2 = belanger(y1, q / (y1 * Math.sqrt(9.81 * y1))); return 9.81 * q * b * (y2 - y1) ** 3 / (4 * y1 * y2); }},
+  ],
+  solucion: ({b, q, y1}) => {
+    const Fr = q / (y1 * Math.sqrt(9.81 * y1)), y2 = belanger(y1, Fr);
+    const E1 = y1 + q * q / (19.62 * y1 * y1), E2 = y2 + q * q / (19.62 * y2 * y2), dE = E1 - E2;
+    return `<ol>
+      <li>Fr₁ = ${cs(Fr)}; y₂ = (y₁/2)(√(1 + 8Fr₁²) − 1) = <strong>${cs(y2)} m</strong>.</li>
+      <li>E₁ = ${cs(E1, 4)} m; E₂ = ${cs(E2, 4)} m; E₂/E₁ = <strong>${cs(E2 / E1)}</strong>.</li>
+      <li>ΔE = ${cs(dE)} m; Q = q b = ${cs(q * b)} m³/s; P = γ Q ΔE = 9810·${cs(q * b)}·${cs(dE)} = <strong>${cs(9.81 * q * b * dE)} kW</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Laboratorio 3: rugosidad del canal",
+  generar: () => ({b: elegir([0.08, 0.2, 0.3]), QL: azar(2, 20, 0.5), y: azar(0.04, 0.15, 0.005), S: elegir([0.001, 0.002, 0.003, 0.005])}),
+  enunciado: ({b, QL, y, S}) => `En el canal de pendiente variable (ancho <strong>${cs(b * 100)} cm</strong>) se establece flujo uniforme con <strong>Q = ${cs(QL)} L/s</strong>, <strong>y = ${cs(y * 100)} cm</strong> y <strong>S₀ = ${cs(S)}</strong>. Calcula el radio hidráulico y el coeficiente n de Manning del canal.`,
+  respuestas: [
+    {etiqueta: "R =", unidad: "m", valor: ({b, y}) => b * y / (b + 2 * y)},
+    {etiqueta: "n =", unidad: "s/m^1/3", valor: ({b, QL, y, S}) => b * y * Math.pow(b * y / (b + 2 * y), 2 / 3) * Math.sqrt(S) / (QL / 1000)},
+  ],
+  solucion: ({b, QL, y, S}) => {
+    const A = b * y, R = A / (b + 2 * y);
+    return `<ol>
+      <li>Pasa todo a SI: Q = ${cs(QL / 1000)} m³/s, b = ${cs(b)} m, y = ${cs(y)} m.</li>
+      <li>A = ${cs(A)} m²; P = b + 2y = ${cs(b + 2 * y)} m; R = <strong>${cs(R)} m</strong>.</li>
+      <li>n = A R^(2/3) S₀^(1/2)/Q = <strong>${cs(A * Math.pow(R, 2 / 3) * Math.sqrt(S) / (QL / 1000))}</strong>.</li>
+    </ol>
+    <p>En canales de laboratorio angostos las paredes pesan mucho en el perímetro: no uses R ≈ y.</p>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Informe del laboratorio 3:** n de Manning y C de Chezy para cada rugosidad y pendiente; ¿se mantienen constantes?
+- **Proyecto integrador:** propone la estructura de disipación de tu caso de estudio.
+- **Tarea 2 en GitHub:** agrega eficiencia y potencia disipada en `corte2.py`.

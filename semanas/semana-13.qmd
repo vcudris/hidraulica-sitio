@@ -1,0 +1,148 @@
+---
+title: "Semana 13 · Cálculo de perfiles y consideraciones ambientales"
+subtitle: "Unidad 3 · Flujo gradualmente variado"
+---
+
+::: {.callout-note appearance="simple"}
+**RA3.** Modelar perfiles de flujo gradualmente variado y aplicar criterios de sostenibilidad ambiental y prevención de riesgos de inundación en el diseño de sistemas hídricos en canales abiertos.
+
+**Lo que debes lograr esta semana.** Calcular un perfil de remanso con el método del paso directo, compararlo con el método del paso estándar y usarlo para estimar qué tramo de un canal se desborda aguas arriba de una obra.
+:::
+
+## Antes de clase
+
+- Chow, cap. 10, *Métodos de cálculo*: paso directo, paso estándar e integración, y cap. 11 (problemas prácticos: remanso aguas arriba de presas).
+- Repasa el paso directo de la [semana 12](semana-12.qmd).
+
+## Ideas clave
+
+**Métodos de cálculo.**
+
+| Método | Qué se fija | Qué se calcula | Cuándo se usa |
+|---|---|---|---|
+| Paso directo | Los tirantes | La distancia entre secciones | Canales prismáticos |
+| Paso estándar | Las secciones (distancias conocidas) | El nivel del agua en cada sección, por tanteo | Ríos y canales no prismáticos; es el que usa HEC-RAS |
+| Integración numérica | — | $x$ integrando $dx/dy = (1 - Fr^2)/(S_0 - S_f)$ | Cálculo por computador |
+
+**Paso estándar.** Entre dos secciones conocidas separadas $\Delta x$ se iguala la energía total, con cotas absolutas:
+
+$$
+z_1 + y_1 + \frac{V_1^2}{2g} = z_2 + y_2 + \frac{V_2^2}{2g} + \bar{S}_f\,\Delta x
+$$
+
+::: {.variables}
+- $z_1$, $z_2$: cota del fondo en cada sección [m].
+- $y$, $V$: tirante y velocidad en cada sección [m, m/s].
+- $\bar{S}_f$: pendiente de fricción media del tramo [m/m].
+- $\Delta x$: distancia entre secciones [m].
+:::
+
+Se supone el nivel en la sección nueva, se calcula la energía y se corrige hasta que los dos lados coincidan.
+
+**Remanso e inundación.** Una presa, un puente con pilas, una alcantarilla pequeña o un relleno en el cauce levantan el nivel aguas arriba (perfil M1). El remanso puede extenderse kilómetros en canales de poca pendiente. Consecuencias ambientales y de riesgo:
+
+- **Inundación** de predios y vías aguas arriba cuando el nivel supera la altura de los bordos.
+- **Sedimentación** en el tramo de remanso, porque la velocidad baja; pérdida de capacidad del canal con el tiempo.
+- **Calidad del agua:** aguas lentas, más calientes y con menos oxígeno; favorecen algas y vectores.
+- **Conectividad ecológica:** las obras transversales cortan el paso de peces y sedimentos.
+
+Por eso en el diseño se calcula el perfil para la creciente de diseño y se verifica el borde libre en todo el tramo, no solo en flujo uniforme.
+
+## Simulador: remanso aguas arriba de una presa
+
+```{ojs}
+import {cs, practica, azar, elegir, resultados, tiranteNormal, tiranteCritico, perfilFGV, geometria} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof b = Inputs.range([1, 20], {value: 6, step: 0.5, label: "Ancho de fondo b (m)"})
+viewof z = Inputs.range([0, 3], {value: 2, step: 0.25, label: "Talud z (z:1)"})
+viewof n = Inputs.range([0.015, 0.05], {value: 0.03, step: 0.001, label: "Rugosidad n (cauce natural ≈ 0,03)"})
+viewof S0 = Inputs.range([0.0001, 0.003], {value: 0.0004, step: 0.0001, label: "Pendiente S₀ (m/m)"})
+viewof Q = Inputs.range([1, 150], {value: 40, step: 1, label: "Caudal de la creciente Q (m³/s)"})
+viewof yPresa = Inputs.range([1, 10], {value: 4.5, step: 0.1, label: "Tirante junto a la presa (m)"})
+viewof Hb = Inputs.range([1, 10], {value: 3.5, step: 0.1, label: "Altura de los bordos (m)"})
+```
+
+```{ojs}
+sec = ({forma: "trapecial", b, z})
+yn = tiranteNormal(sec, Q, n, S0)
+yc = tiranteCritico(sec, Q)
+perfil = yPresa > yn && yn > yc ? perfilFGV(sec, Q, n, S0, yPresa, 150) : null
+pts = perfil ? perfil.puntos.map((p) => ({...p, fondo: -S0 * p.x, sup: -S0 * p.x + p.y, bordo: -S0 * p.x + Hb, ynl: -S0 * p.x + yn})) : []
+desborde = pts.filter((p) => p.y > Hb)
+largoInund = desborde.length ? Math.abs(desborde.at(-1).x) : 0
+largo5 = pts.find((p) => p.y <= 1.05 * yn)
+```
+
+```{ojs}
+pts.length ? Plot.plot({
+  height: 340,
+  x: {label: "Distancia desde la presa (m), negativa aguas arriba", grid: true},
+  y: {label: "Cota relativa (m)", grid: true},
+  marks: [
+    Plot.areaY(pts, {x: "x", y1: "fondo", y2: "sup", fill: "steelblue", fillOpacity: 0.3}),
+    Plot.areaY(pts.filter((p) => p.y > Hb), {x: "x", y1: "bordo", y2: "sup", fill: "firebrick", fillOpacity: 0.45}),
+    Plot.line(pts, {x: "x", y: "sup", stroke: "steelblue", strokeWidth: 2.5}),
+    Plot.line(pts, {x: "x", y: "fondo", stroke: "currentColor", strokeWidth: 2}),
+    Plot.line(pts, {x: "x", y: "bordo", stroke: "sienna", strokeWidth: 1.5}),
+    Plot.line(pts, {x: "x", y: "ynl", stroke: "seagreen", strokeDasharray: "6,4"}),
+  ],
+  caption: "Perfil M1. Café: corona de los bordos; rojo: tramo donde el agua los supera; verde: nivel en flujo uniforme. Escala vertical exagerada.",
+}) : html`<p><em>${!(yn > yc) ? "Con estos datos la pendiente es fuerte: aguas arriba de la presa se forma un resalto y un perfil S1. Usa el simulador de la semana 12." : "El tirante junto a la presa debe ser mayor que el normal para que haya remanso M1."}</em></p>`
+```
+
+```{ojs}
+resultados([
+  ["Tirante normal (sin presa), yn", cs(yn), "m", yn > Hb ? "el canal ya se desborda sin la presa" : `borde libre ${cs(Hb - yn)} m`],
+  ["Tirante crítico, yc", cs(yc), "m"],
+  ["Sobreelevación junto a la presa", cs(yPresa - yn), "m"],
+  ["Distancia hasta y = 1,05 yn", largo5 ? cs(Math.abs(largo5.x)) : "—", "m", "longitud práctica del remanso"],
+  ["Tramo desbordado aguas arriba", cs(largoInund), "m", largoInund > 0 ? "hay que subir los bordos, bajar la presa o dar paso a la creciente" : "los bordos contienen el remanso"],
+  ["Velocidad junto a la presa", pts.length ? cs(pts[0].V) : "—", "m/s", pts.length ? `contra ${cs(Q / geometria(sec, yn).A)} m/s en flujo uniforme: riesgo de sedimentación` : ""],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Reduce la pendiente a 0,0002. ¿Cuánto se alarga el remanso? ¿Por qué los ríos de llanura, como los de la costa Caribe, tienen remansos tan largos?
+2. Busca el tirante máximo en la presa que no desborda los bordos. ¿Cambia si la creciente es mayor?
+3. ¿Cuánto cae la velocidad en el tramo de remanso? Relaciónalo con la velocidad mínima para que no se depositen sedimentos ([semana 7](semana-07.qmd)).
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Remanso en dos pasos",
+  generar: () => ({b: azar(3, 8, 0.5), Q: azar(8, 30, 1), n: elegir([0.025, 0.03]), S: elegir([0.0004, 0.0008])}),
+  enunciado: ({b, Q, n, S}) => {
+    const yn = tiranteNormal({forma: "rectangular", b}, Q, n, S), y0 = Number((yn + 1.2).toPrecision(3));
+    return `Un canal rectangular de <strong>${cs(b)} m</strong> (n = ${cs(n)}, S₀ = ${cs(S)}) lleva <strong>${cs(Q)} m³/s</strong>; su tirante normal es ${cs(yn)} m. Una presa produce <strong>${cs(y0)} m</strong> junto a ella. Con dos pasos de 0,4 m (hasta ${cs(y0 - 0.8)} m), ¿a qué distancia aguas arriba está el tirante final?`;
+  },
+  respuestas: [{etiqueta: "|x| =", unidad: "m", valor: ({b, Q, n, S}) => {
+    const yn = tiranteNormal({forma: "rectangular", b}, Q, n, S), y0 = Number((yn + 1.2).toPrecision(3));
+    const f = (y) => { const A = b * y, R = A / (b + 2 * y); return {E: y + (Q / A) ** 2 / 19.62, Sf: (n * Q) ** 2 / (A * A * Math.pow(R, 4 / 3))}; };
+    let x = 0;
+    for (const [ya, yb] of [[y0, y0 - 0.4], [y0 - 0.4, y0 - 0.8]]) { const p1 = f(ya), p2 = f(yb); x += (p2.E - p1.E) / (S - (p1.Sf + p2.Sf) / 2); }
+    return Math.abs(x);
+  }}],
+  solucion: ({b, Q, n, S}) => {
+    const yn = tiranteNormal({forma: "rectangular", b}, Q, n, S), y0 = Number((yn + 1.2).toPrecision(3));
+    const f = (y) => { const A = b * y, R = A / (b + 2 * y); return {E: y + (Q / A) ** 2 / 19.62, Sf: (n * Q) ** 2 / (A * A * Math.pow(R, 4 / 3))}; };
+    let x = 0, filas = "";
+    for (const [ya, yb] of [[y0, y0 - 0.4], [y0 - 0.4, y0 - 0.8]]) {
+      const p1 = f(ya), p2 = f(yb), dx = (p2.E - p1.E) / (S - (p1.Sf + p2.Sf) / 2);
+      x += dx;
+      filas += `<li>De ${cs(ya)} a ${cs(yb)} m: ΔE = ${cs(p2.E - p1.E, 4)} m, S_f media = ${cs((p1.Sf + p2.Sf) / 2)}, Δx = ${cs(dx)} m.</li>`;
+    }
+    return `<ol>${filas}<li>Suma: x = ${cs(x)} m, es decir <strong>${cs(Math.abs(x))} m aguas arriba</strong>.</li></ol>
+    <p>Con pasos más pequeños el resultado mejora; prueba con 4 pasos de 0,2 m en tu tarea.</p>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Taller de perfiles de flujo:** remanso de una presa por paso directo y por paso estándar; compara las longitudes.
+- **Proyecto integrador:** calcula el perfil de tu tramo para la creciente de diseño y verifica el borde libre.
+- **Tarea 3 en GitHub:** completa `corte3.py`.

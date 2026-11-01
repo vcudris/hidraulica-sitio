@@ -1,0 +1,215 @@
+---
+title: "Semana 5 · Velocidades y aforo"
+subtitle: "Unidad 1 · Geometría, energía y régimen"
+---
+
+::: {.callout-note appearance="simple"}
+**RA1.** Analizar el flujo de agua en canales a cielo abierto aplicando los principios de conservación de masa y energía, diferenciando regímenes de flujo (libre/confinado, sub/crítico/supercrítico) mediante el número de Froude.
+
+**Lo que debes lograr esta semana.** Explicar cómo se distribuye la velocidad en una sección, estimar la velocidad media con mediciones puntuales y aforar un canal por el método directo y con vertederos.
+
+**Laboratorio 2 de 6:** geometría del canal y aforo. **Parcial 1** al cierre de la semana.
+:::
+
+## Antes de clase
+
+- Chow, cap. 2: distribución de velocidades y coeficientes de distribución de velocidad.
+- Mott y Untener, cap. 14: numeral 14.9 (medición de flujo en canales abiertos).
+
+## Ideas clave
+
+**Distribución de velocidades.** La fricción con el fondo y las paredes frena el agua: la velocidad es cero en el contorno y máxima un poco por debajo de la superficie. En flujo turbulento sobre fondo rugoso, la velocidad en una vertical sigue aproximadamente la **ley logarítmica**:
+
+$$
+u(z) = \frac{u_*}{\kappa}\,\ln\!\left(\frac{30\,z}{k_s}\right) \qquad u_* = \sqrt{g\,R\,S}
+$$
+
+::: {.variables}
+- $u(z)$: velocidad puntual a la altura $z$ sobre el fondo [m/s].
+- $u_*$: velocidad de corte [m/s].
+- $\kappa$: constante de von Kármán, 0,41 [—].
+- $k_s$: rugosidad equivalente del fondo, del orden del tamaño de los granos [m].
+- $R$: radio hidráulico [m]; en un canal ancho $R \approx y$.
+- $S$: pendiente de la línea de energía [m/m].
+:::
+
+**Velocidad media en una vertical.** Con la ley logarítmica se demuestra que la velocidad a **0,6 del tirante medido desde la superficie** es casi igual a la media de la vertical. En ríos profundos se usa el promedio de las lecturas a 0,2 y 0,8 del tirante. Con flotadores se mide la velocidad superficial y se multiplica por un coeficiente cercano a 0,85.
+
+**Aforo por área-velocidad (sección media).** Se divide la sección en franjas verticales, se mide el tirante y la velocidad media de cada una, y se suma:
+
+$$
+Q = \sum_i V_i\,a_i
+$$
+
+::: {.variables}
+- $V_i$: velocidad media de la franja $i$ [m/s].
+- $a_i$: área de la franja, ancho por tirante medio [m²].
+:::
+
+**Coeficientes de distribución.** Como la velocidad no es uniforme, la carga de velocidad real es $\alpha V^2/2g$, con $\alpha$ entre 1,03 y 1,36 en canales prismáticos (Chow). En este curso se toma $\alpha = 1$ salvo que se diga otra cosa.
+
+**Vertederos de pared delgada.** Una placa que obliga al agua a pasar por encima de una cresta: el caudal depende solo de la carga $H$ medida aguas arriba (a unas $4H$ de la cresta).
+
+$$
+Q_{tri} = \frac{8}{15}\,C_d\,\sqrt{2g}\,\tan\frac{\theta}{2}\,H^{5/2} \qquad
+Q_{rect} = 1{,}84\,(L - 0{,}1\,n\,H)\,H^{3/2}
+$$
+
+::: {.variables}
+- $H$: carga sobre la cresta o el vértice [m].
+- $\theta$: ángulo de la escotadura triangular [°]; con 90° y $C_d = 0{,}585$, $Q \approx 1{,}38\,H^{5/2}$.
+- $C_d$: coeficiente de descarga [—].
+- $L$: longitud de la cresta del vertedero rectangular [m].
+- $n$: número de contracciones laterales (0, 1 o 2) [—].
+:::
+
+La fórmula del vertedero rectangular es la de Francis en unidades SI; sirve con vertedero ventilado y $H$ entre 0,08 m y un tercio de $L$, aproximadamente.
+
+## Simulador: perfil de velocidad en una vertical
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, vertederoTriangular, vertederoRectangular} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof yv = Inputs.range([0.05, 5], {value: 1.2, step: 0.01, label: "Tirante y (m)"})
+viewof Sv = Inputs.range([0.0001, 0.01], {value: 0.001, step: 0.0001, label: "Pendiente S (m/m)"})
+viewof ksmm = Inputs.range([0.5, 200], {value: 20, step: 0.5, label: "Rugosidad del fondo kₛ (mm)"})
+```
+
+```{ojs}
+ks = ksmm / 1000
+ustar = Math.sqrt(9.81 * yv * Sv)
+uz = (z) => ustar / 0.41 * Math.log(30 * z / ks)
+z0 = ks / 30
+perfilV = d3.range(1, 201).map((i) => ({z: z0 + (yv - z0) * i / 200})).map((p) => ({...p, u: Math.max(uz(p.z), 0)}))
+Vmedia = ustar / 0.41 * (Math.log(yv / z0) - 1 + z0 / yv)
+lecturas = [
+  {nombre: "0,2 y desde la superficie", z: 0.8 * yv},
+  {nombre: "0,6 y desde la superficie", z: 0.4 * yv},
+  {nombre: "0,8 y desde la superficie", z: 0.2 * yv},
+].map((l) => ({...l, u: uz(l.z)}))
+```
+
+```{ojs}
+ks < yv / 2 ? Plot.plot({
+  height: 320,
+  x: {label: "Velocidad u (m/s)", grid: true, domain: [0, uz(yv) * 1.1]},
+  y: {label: "Altura sobre el fondo z (m)", grid: true, domain: [0, yv]},
+  marks: [
+    Plot.areaX(perfilV, {x: "u", y: "z", fill: "steelblue", fillOpacity: 0.15}),
+    Plot.line(perfilV, {x: "u", y: "z", stroke: "steelblue", strokeWidth: 2}),
+    Plot.ruleX([Vmedia], {stroke: "darkorange", strokeDasharray: "6,4"}),
+    Plot.dot(lecturas, {x: "u", y: "z", r: 5, fill: "firebrick"}),
+    Plot.text(lecturas, {x: "u", y: "z", text: (d) => d.nombre, dx: 8, textAnchor: "start", fontSize: 11}),
+  ],
+  caption: "Ley logarítmica de velocidades. La línea naranja es la velocidad media exacta de la vertical; los puntos rojos son las lecturas del molinete.",
+}) : html`<p><em>La rugosidad es demasiado grande para este tirante: la ley logarítmica no aplica.</em></p>`
+```
+
+```{ojs}
+resultados([
+  ["Velocidad de corte, u* = √(g y S)", cs(ustar), "m/s"],
+  ["Velocidad media exacta de la vertical", cs(Vmedia), "m/s"],
+  ["Lectura a 0,6 y", cs(lecturas[1].u), "m/s", `error ${cs(100 * (lecturas[1].u / Vmedia - 1), 2)} %`],
+  ["Promedio de 0,2 y y 0,8 y", cs((lecturas[0].u + lecturas[2].u) / 2), "m/s", `error ${cs(100 * ((lecturas[0].u + lecturas[2].u) / 2 / Vmedia - 1), 2)} %`],
+  ["Velocidad superficial", cs(uz(yv)), "m/s", `V media / u superficial = ${cs(Vmedia / uz(yv))}`],
+])
+```
+
+## Simulador: vertedero de aforo
+
+```{ojs}
+viewof tipoV = Inputs.radio(["triangular", "rectangular"], {value: "triangular", label: "Vertedero"})
+viewof ang = Inputs.select([30, 45, 60, 90, 120], {value: 90, label: "Ángulo θ (°), triangular"})
+viewof Lw = Inputs.range([0.2, 3], {value: 0.5, step: 0.05, label: "Longitud de cresta L (m), rectangular"})
+viewof nc = Inputs.select([0, 1, 2], {value: 2, label: "Contracciones laterales, rectangular"})
+viewof H = Inputs.range([0.02, 0.6], {value: 0.15, step: 0.005, label: "Carga H (m)"})
+```
+
+```{ojs}
+Qv = (h) => tipoV === "triangular" ? vertederoTriangular(h, ang) : vertederoRectangular(h, Lw, nc)
+curvaV = d3.range(1, 121).map((i) => ({H: 0.6 * i / 120})).map((p) => ({...p, Q: Qv(p.H) * 1000}))
+```
+
+```{ojs}
+Plot.plot({
+  height: 280,
+  x: {label: "Carga H (m)", grid: true},
+  y: {label: "Caudal Q (L/s)", grid: true},
+  marks: [
+    Plot.line(curvaV, {x: "H", y: "Q", stroke: "steelblue", strokeWidth: 2}),
+    Plot.dot([{H, Q: Qv(H) * 1000}], {x: "H", y: "Q", r: 6, fill: "darkorange"}),
+  ],
+  caption: "Curva de calibración del vertedero (caudal en litros por segundo).",
+})
+```
+
+```{ojs}
+resultados([
+  ["Caudal", cs(Qv(H) * 1000), "L/s", `${cs(Qv(H))} m³/s`],
+  ["Sensibilidad: error en Q si H se lee 1 mm mal", cs(100 * (Qv(H + 0.001) / Qv(H) - 1), 2), "%"],
+  tipoV === "rectangular" && H > Lw / 3 ? ["Advertencia", "H > L/3", "", "fuera del rango de la fórmula de Francis"] : ["Exponente de H", tipoV === "triangular" ? "5/2" : "3/2", ""],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Aumenta la rugosidad $k_s$. ¿Cambia el error de la lectura a 0,6 $y$? ¿Por qué el método funciona tan bien con cualquier fondo?
+2. Compara el vertedero triangular con el rectangular para caudales pequeños (menos de 10 L/s). ¿Cuál da una carga más fácil de leer? Por eso el triangular se usa en laboratorios y canales pequeños.
+3. ¿Qué error en el caudal produce leer mal la carga por 1 mm en cada vertedero cuando $H = 5$ cm?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Aforo de una franja con molinete",
+  generar: () => ({w: azar(0.5, 2, 0.25), y: azar(0.8, 3, 0.1), u2: azar(0.6, 1.8, 0.05), r: azar(0.55, 0.75, 0.01)}),
+  enunciado: ({w, y, u2, r}) => `En una franja de <strong>${cs(w)} m</strong> de ancho y <strong>${cs(y)} m</strong> de tirante, el molinete marca <strong>${cs(u2)} m/s</strong> a 0,2 y y <strong>${cs(u2 * r, 3)} m/s</strong> a 0,8 y (medidos desde la superficie). Calcula la velocidad media y el caudal de la franja.`,
+  respuestas: [
+    {etiqueta: "V =", unidad: "m/s", valor: ({u2, r}) => (u2 + Number((u2 * r).toPrecision(3))) / 2},
+    {etiqueta: "q =", unidad: "m³/s", valor: ({w, y, u2, r}) => (u2 + Number((u2 * r).toPrecision(3))) / 2 * w * y},
+  ],
+  solucion: ({w, y, u2, r}) => {
+    const u8 = Number((u2 * r).toPrecision(3)), V = (u2 + u8) / 2;
+    return `<ol>
+      <li>V = (u₀,₂ + u₀,₈)/2 = (${cs(u2)} + ${cs(u8)})/2 = <strong>${cs(V)} m/s</strong>.</li>
+      <li>a = ancho · tirante = ${cs(w)}·${cs(y)} = ${cs(w * y)} m².</li>
+      <li>q = V a = <strong>${cs(V * w * y)} m³/s</strong>. El caudal del cauce es la suma de todas las franjas.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Caudal en un vertedero triangular",
+  generar: () => ({H: azar(0.05, 0.35, 0.005), ang: elegir([60, 90])}),
+  enunciado: ({H, ang}) => `Un vertedero triangular de pared delgada con escotadura de <strong>${ang}°</strong> trabaja con una carga de <strong>${cs(H * 100)} cm</strong>. Con C<sub>d</sub> = 0,585, calcula el caudal.`,
+  respuestas: [{etiqueta: "Q =", unidad: "L/s", valor: ({H, ang}) => vertederoTriangular(H, ang) * 1000}],
+  solucion: ({H, ang}) => `<ol>
+      <li>Q = (8/15) C_d √(2g) tan(θ/2) H^(5/2), con H en metros: H = ${cs(H)} m.</li>
+      <li>(8/15)·0,585·√19,62·tan(${ang / 2}°) = ${cs((8 / 15) * 0.585 * Math.sqrt(19.62) * Math.tan(ang * Math.PI / 360), 4)}; H^(5/2) = ${cs(H ** 2.5, 4)}.</li>
+      <li>Q = ${cs(vertederoTriangular(H, ang), 4)} m³/s = <strong>${cs(vertederoTriangular(H, ang) * 1000)} L/s</strong>.</li>
+    </ol>`,
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Carga en un vertedero rectangular",
+  generar: () => ({L: azar(0.5, 3, 0.25), Q: azar(0.05, 0.8, 0.01)}),
+  enunciado: ({L, Q}) => `Se quiere aforar <strong>${cs(Q * 1000)} L/s</strong> con un vertedero rectangular sin contracciones de <strong>${cs(L)} m</strong> de cresta. ¿Qué carga H se leerá?`,
+  respuestas: [{etiqueta: "H =", unidad: "m", valor: ({L, Q}) => (Q / (1.84 * L)) ** (2 / 3)}],
+  solucion: ({L, Q}) => `<ol>
+      <li>Sin contracciones, Q = 1,84 L H^(3/2) ⇒ H = (Q/(1,84 L))^(2/3).</li>
+      <li>H = (${cs(Q)}/(1,84·${cs(L)}))^(2/3) = <strong>${cs((Q / (1.84 * L)) ** (2 / 3))} m</strong>.</li>
+    </ol>`,
+})
+```
+
+## Después de clase
+
+- **Informe del laboratorio 2:** geometría del canal, aforo volumétrico y por vertedero; compara los caudales.
+- **Parcial 1:** semanas 1 a 5. Repasa con los ejercicios de práctica de cada semana.
+- **Tarea 1 en GitHub:** termina `corte1.py` antes del parcial.

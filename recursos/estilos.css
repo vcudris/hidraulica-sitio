@@ -1,0 +1,105 @@
+/* Ejercicios de autoverificación y tablas de resultados de los simuladores.
+   Usa las variables de Bootstrap para que funcione en modo claro y oscuro. */
+
+.practica {
+  border: 1px solid var(--bs-border-color);
+  border-left: 4px solid var(--bs-primary);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  background: var(--bs-tertiary-bg, transparent);
+}
+
+.practica-titulo {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.practica-campos {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.practica-fila {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 9rem max-content 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.practica-ayuda {
+  color: var(--bs-secondary-color);
+  font-size: 0.85em;
+  margin-bottom: 0.5rem;
+}
+
+.practica-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.practica-estado.bien { color: var(--bs-success); font-weight: 600; }
+.practica-estado.mal { color: var(--bs-danger); font-weight: 600; }
+.practica-estado.pendiente { color: var(--bs-secondary-color); }
+
+.practica-solucion {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--bs-border-color);
+}
+
+.practica-solucion ol { margin-bottom: 0; }
+
+table.resultados { width: auto; margin-top: 0.5rem; }
+table.resultados th { font-weight: 500; padding-right: 1rem; }
+table.resultados td.valor { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+table.resultados td.nota { color: var(--bs-secondary-color); font-size: 0.9em; }
+
+/* Definición de variables debajo de cada ecuación ("Donde: …"). */
+.variables {
+  margin: -0.4rem 0 1.2rem;
+  padding: 0.4rem 0.9rem;
+  border-left: 3px solid var(--bs-info, #0dcaf0);
+  background: var(--bs-tertiary-bg, transparent);
+  border-radius: 0 0.4rem 0.4rem 0;
+  font-size: 0.92em;
+}
+.variables::before {
+  content: "Donde:";
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+.variables ul { margin: 0; padding-left: 1.1rem; }
+.variables li { margin: 0.1rem 0; }
+.variables p { margin: 0; }
+
+.esquema { max-width: 100%; height: auto; }
+.esquema text { fill: currentColor; font-size: 12px; }
+
+/* Corte transversal del canal (recursos/hc.js → dibujarSeccion). */
+.seccion { max-width: 30rem; display: block; margin: 0.5rem 0 1rem; }
+.seccion .contorno { stroke: currentColor; stroke-width: 2.5; stroke-linejoin: round; }
+.seccion .agua { fill: color-mix(in srgb, steelblue 35%, transparent); }
+.seccion .superficie { stroke: steelblue; stroke-width: 2; }
+.seccion .cota { stroke: currentColor; stroke-width: 1; }
+.seccion .marca { stroke: var(--bs-secondary-color); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.seccion .marca.critico { stroke: var(--bs-warning); }
+.seccion .marca.normal { stroke: var(--bs-success); }
+.esquema text.marca-texto { font-size: 11px; }
+.esquema text.marca-texto.critico { fill: var(--bs-warning); }
+.esquema text.marca-texto.normal { fill: var(--bs-success); }
+
+/* Etiqueta de régimen de flujo junto a los resultados. */
+.regimen { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 1rem; font-size: 0.85em; font-weight: 600;
+  border: 1px solid currentColor; }
+.regimen.subcrítico { color: steelblue; }
+.regimen.crítico { color: var(--bs-warning); }
+.regimen.supercrítico { color: var(--bs-danger); }
+
+@media (max-width: 576px) {
+  .practica-fila { grid-template-columns: 1fr 7rem max-content; }
+  .practica-estado { grid-column: 1 / -1; }
+}

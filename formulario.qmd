@@ -1,0 +1,109 @@
+---
+title: "Formulario"
+subtitle: "Ecuaciones del curso, con sus hipótesis"
+---
+
+Unidades SI: m, s, m³/s. $g = 9{,}81$ m/s², $\gamma = 9810$ N/m³, $\rho = 1000$ kg/m³, $\nu = 1{,}0\times10^{-6}$ m²/s (agua a 20 °C). Canal prismático de pendiente pequeña y $\alpha = 1$, salvo que se diga otra cosa.
+
+## Unidad 1 · Geometría, energía y régimen
+
+| Concepto | Ecuación | Hipótesis |
+|---|---|---|
+| Radio y profundidad hidráulicos | $R = A/P$, $D = A/T$ | |
+| Rectangular | $A = by$, $P = b + 2y$, $T = b$ | |
+| Trapecial | $A = (b + zy)y$, $P = b + 2y\sqrt{1+z^2}$, $T = b + 2zy$ | Taludes iguales |
+| Circular | $\theta = 2\arccos(1 - 2y/D_0)$, $A = \tfrac{D_0^2}{8}(\theta - \operatorname{sen}\theta)$, $P = \theta D_0/2$, $T = D_0\operatorname{sen}(\theta/2)$ | $\theta$ en radianes |
+| Reynolds | $Re = VR/\nu$; laminar $< 500$, turbulento $> 2000$ | |
+| Froude | $Fr = V/\sqrt{gD}$ | |
+| Energía específica | $E = y + V^2/2g = y + Q^2/(2gA^2)$ | Presión hidrostática |
+| Flujo crítico | $Q^2T/(gA^3) = 1$ | |
+| Crítico rectangular | $y_c = (q^2/g)^{1/3}$, $E_{min} = 1{,}5\,y_c$, $V_c = \sqrt{g y_c}$ | |
+| Crítico triangular | $y_c = (2Q^2/(g z^2))^{1/5}$, $E_{min} = 1{,}25\,y_c$ | |
+| Escalón | $E_2 = E_1 - \Delta z$; $\Delta z_{max} = E_1 - E_{min}$ | Sin pérdidas |
+| Contracción rectangular | $b_{min} = Q/\sqrt{g(2E_1/3)^3}$ | Fondo horizontal, sin pérdidas |
+| Ley logarítmica | $u = (u_*/\kappa)\ln(30z/k_s)$, $u_* = \sqrt{gRS}$, $\kappa = 0{,}41$ | Turbulento rugoso |
+| Aforo área-velocidad | $Q = \sum V_i a_i$; $V \approx u_{0,6}$ o $(u_{0,2} + u_{0,8})/2$ | |
+| Vertedero triangular | $Q = \tfrac{8}{15}C_d\sqrt{2g}\tan(\theta/2)H^{5/2}$; con 90°, $Q \approx 1{,}38H^{5/2}$ | Pared delgada, ventilado |
+| Vertedero rectangular (Francis) | $Q = 1{,}84(L - 0{,}1nH)H^{3/2}$ | Pared delgada, $H < L/3$ |
+
+**Variables**
+
+| Símbolo | Significado | Unidad |
+|---|---|---|
+| $y$ | Tirante | m |
+| $A$, $P$, $T$ | Área mojada, perímetro mojado, ancho superficial | m², m, m |
+| $R$, $D$ | Radio hidráulico, profundidad hidráulica | m |
+| $b$, $z$ | Ancho de fondo, talud (z horizontal : 1 vertical) | m, — |
+| $D_0$, $\theta$ | Diámetro del conducto, ángulo central mojado | m, rad |
+| $Q$, $q$ | Caudal, caudal unitario $Q/b$ | m³/s, m²/s |
+| $V$ | Velocidad media | m/s |
+| $E$, $E_{min}$ | Energía específica y su mínimo | m |
+| $y_c$, $V_c$ | Tirante y velocidad críticos | m, m/s |
+| $\Delta z$ | Altura de un escalón en el fondo | m |
+| $u$, $u_*$, $k_s$ | Velocidad puntual, velocidad de corte, rugosidad equivalente | m/s, m/s, m |
+| $H$, $L$, $n$ | Carga sobre el vertedero, longitud de cresta, contracciones | m, m, — |
+
+## Unidad 2 · Flujo uniforme y resalto
+
+| Concepto | Ecuación | Hipótesis |
+|---|---|---|
+| Flujo uniforme | $S_0 = S_w = S_f$ | Permanente, canal largo y prismático |
+| Chezy | $V = C\sqrt{RS}$ | |
+| Manning | $V = \tfrac{1}{n}R^{2/3}S^{1/2}$, $Q = \tfrac{1}{n}AR^{2/3}S^{1/2}$ | Turbulento rugoso |
+| Relación Chezy-Manning | $C = R^{1/6}/n$ | |
+| Tirante normal | $AR^{2/3} = nQ/\sqrt{S_0}$ | Por tanteo |
+| Pendiente crítica | $S_c = g n^2 D_c/R_c^{4/3}$ | |
+| Sección óptima trapecial | $b = 2y(\sqrt{1+z^2} - z)$, $R = y/2$ | Talud fijo |
+| Fuerza tractiva | $\tau_0 = \gamma R S_0$; fondo $\approx \gamma y S_0$ | |
+| Borde libre (USBR) | $F = \sqrt{C y}$, $C = 0{,}46$ a $0{,}76$ | Guía |
+| Fuerza específica | $M = Q^2/(gA) + \bar{y}A$ | Tramo corto, fricción despreciable |
+| Bélanger | $y_2/y_1 = \tfrac12(\sqrt{1 + 8Fr_1^2} - 1)$ | Rectangular horizontal |
+| Pérdida en el resalto | $\Delta E = (y_2 - y_1)^3/(4y_1y_2)$ | Rectangular |
+| Longitud del resalto | $L_j \approx 6{,}9(y_2 - y_1)$ | $4{,}5 < Fr_1 < 13$ aprox. |
+| Potencia disipada | $P = \gamma Q \Delta E$ | |
+| Compuerta | $y_2 = C_c a$; $Q = C_d b a\sqrt{2gy_1}$; $C_d = C_c/\sqrt{1 + C_c a/y_1}$ | Descarga libre, $C_c \approx 0{,}61$ |
+| Fuerza sobre la compuerta | $F = \tfrac{\gamma b}{2}(y_1^2 - y_2^2) - \rho Q(V_2 - V_1)$ | Rectangular |
+
+**Variables**
+
+| Símbolo | Significado | Unidad |
+|---|---|---|
+| $S_0$, $S_w$, $S_f$ | Pendientes del fondo, de la superficie y de fricción | m/m |
+| $n$ | Rugosidad de Manning | s/m^1/3 |
+| $C$ | Coeficiente de Chezy | m^1/2/s |
+| $y_n$ | Tirante normal | m |
+| $\tau_0$ | Esfuerzo cortante medio sobre el contorno | Pa |
+| $F$ | Borde libre; o fuerza sobre la compuerta | m; N |
+| $M$, $\bar{y}$ | Fuerza específica, profundidad del centroide | m³, m |
+| $y_1$, $y_2$ | Tirantes conjugados (antes y después del resalto) | m |
+| $Fr_1$ | Froude antes del resalto | — |
+| $\Delta E$, $L_j$ | Pérdida de energía, longitud del resalto | m |
+| $a$, $C_c$, $C_d$ | Abertura, coeficientes de contracción y de descarga | m, —, — |
+
+**Tipos de resalto (USBR):** ondular $1 < Fr_1 < 1{,}7$; débil $1{,}7$ a $2{,}5$; oscilante $2{,}5$ a $4{,}5$; estable $4{,}5$ a $9$; fuerte $> 9$.
+
+## Unidad 3 · Flujo gradualmente variado
+
+| Concepto | Ecuación | Hipótesis |
+|---|---|---|
+| Ecuación dinámica | $dy/dx = (S_0 - S_f)/(1 - Fr^2)$ | Prismático, hidrostático, Manning local |
+| Pendiente de fricción | $S_f = n^2Q^2/(A^2R^{4/3})$ | |
+| Paso directo | $\Delta x = (E_2 - E_1)/(S_0 - \bar{S}_f)$ | Prismático |
+| Paso estándar | $z_1 + y_1 + V_1^2/2g = z_2 + y_2 + V_2^2/2g + \bar{S}_f\Delta x$ | Secciones conocidas |
+| Rugosidad compuesta (Horton) | $n_e = [\sum P_i n_i^{3/2}/P]^{2/3}$ | Misma velocidad en toda la sección |
+| Sección compuesta | $Q = \sum \tfrac{1}{n_i}A_iR_i^{2/3}S^{1/2}$ | Divisorias verticales sin fricción |
+| Sección-pendiente | $Q = \tfrac{1}{n}AR^{2/3}S^{1/2}$, $S = \Delta h/L$ | Tramo casi uniforme |
+| Conjugado del tirante normal | $y_1^* = \tfrac{y_n}{2}(\sqrt{1 + 8Fr_n^2} - 1)$ | Ubicación del resalto |
+
+**Perfiles:** pendiente suave M ($y_n > y_c$), fuerte S ($y_n < y_c$), crítica C, horizontal H, adversa A. Zona 1 por encima de $y_n$ y $y_c$, zona 2 entre ellas, zona 3 por debajo. En subcrítico se calcula desde el control hacia aguas arriba; en supercrítico, hacia aguas abajo.
+
+**Variables**
+
+| Símbolo | Significado | Unidad |
+|---|---|---|
+| $x$ | Distancia a lo largo del canal, positiva aguas abajo | m |
+| $\bar{S}_f$ | Pendiente de fricción media de un tramo | m/m |
+| $z$ | Cota del fondo | m |
+| $n_e$, $n_i$ | Rugosidad equivalente y de cada parte del perímetro | s/m^1/3 |
+| $P_i$, $A_i$, $R_i$ | Perímetro, área y radio hidráulico de cada parte o subsección | m, m², m |
+| $\Delta h$, $L$ | Desnivel entre marcas de agua y distancia entre secciones | m |

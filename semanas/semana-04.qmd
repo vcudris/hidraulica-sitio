@@ -1,0 +1,187 @@
+---
+title: "Semana 4 · Escalones y contracciones"
+subtitle: "Unidad 1 · Geometría, energía y régimen"
+---
+
+::: {.callout-note appearance="simple"}
+**RA1.** Analizar el flujo de agua en canales a cielo abierto aplicando los principios de conservación de masa y energía, diferenciando regímenes de flujo (libre/confinado, sub/crítico/supercrítico) mediante el número de Froude.
+
+**Lo que debes lograr esta semana.** Usar la energía específica para predecir qué le pasa a la superficie del agua en un escalón del fondo o en un estrechamiento, y reconocer cuándo la transición "estrangula" el flujo.
+
+**Laboratorio 1 de 6:** energía específica y régimen de flujo. Ver [Laboratorios](../laboratorios.qmd).
+:::
+
+## Antes de clase
+
+- Chow, cap. 3 (aplicaciones de la energía específica) y cap. 4 (control del flujo).
+- Repasa la curva $E$-$y$ de la [semana 2](semana-02.qmd).
+
+## Ideas clave
+
+**Escalón en el fondo.** Entre una sección 1 antes del escalón y una 2 sobre él, si las pérdidas son despreciables la energía total se conserva. Como $E$ se mide desde el fondo, el escalón la reduce:
+
+$$
+E_2 = E_1 - \Delta z
+$$
+
+::: {.variables}
+- $E_1$, $E_2$: energía específica antes del escalón y sobre él [m].
+- $\Delta z$: altura del escalón [m]; negativa si es un descenso.
+:::
+
+Sobre la curva $E$-$y$ el punto se mueve hacia la izquierda **sin cambiar de rama**:
+
+- **Flujo subcrítico:** el tirante **baja** sobre el escalón, y la superficie del agua baja más que el fondo sube.
+- **Flujo supercrítico:** el tirante **sube** sobre el escalón.
+
+**Estrangulamiento (choque).** El escalón más alto que deja pasar el caudal sin cambiar las condiciones aguas arriba es
+
+$$
+\Delta z_{max} = E_1 - E_{min}
+$$
+
+Con un escalón mayor, sobre él se establece el **tirante crítico** y el flujo aguas arriba tiene que ganar energía: en subcrítico, el agua se represa y el tirante aguas arriba sube.
+
+**Contracción en canal rectangular.** Si el ancho pasa de $b_1$ a $b_2 < b_1$ con fondo horizontal, la energía se conserva pero aumenta el caudal unitario, $q_2 = Q/b_2$. El punto pasa a otra curva $E$-$y$ más a la derecha. El ancho mínimo sin estrangulamiento cumple $E_{min}(q_2) = E_1$:
+
+$$
+b_{min} = \frac{Q}{\sqrt{g\,\left(\tfrac{2}{3}E_1\right)^3}}
+$$
+
+::: {.variables}
+- $b_1$, $b_2$: ancho antes y en la contracción [m].
+- $q_2$: caudal unitario en la contracción [m²/s].
+- $b_{min}$: ancho con el que se alcanza justo el estado crítico [m].
+:::
+
+**Hipótesis:** canal rectangular, transición corta (pérdidas despreciables), distribución hidrostática de presiones.
+
+## Simulador: escalón y contracción en un canal de laboratorio
+
+```{ojs}
+import {practica, azar, cs, resultados, energia, froude, regimen, tiranteCritico, alternos} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof b1 = Inputs.range([0.1, 3], {value: 0.3, step: 0.01, label: "Ancho del canal b₁ (m)"})
+viewof Q = Inputs.range([0.002, 0.2], {value: 0.02, step: 0.001, label: "Caudal Q (m³/s)"})
+viewof y1 = Inputs.range([0.01, 0.5], {value: 0.12, step: 0.001, label: "Tirante de llegada y₁ (m)"})
+viewof dz = Inputs.range([0, 0.15], {value: 0.02, step: 0.001, label: "Altura del escalón Δz (m)"})
+viewof b2 = Inputs.range([0.05, 3], {value: 0.3, step: 0.01, label: "Ancho en la transición b₂ (m)"})
+```
+
+```{ojs}
+c1 = ({forma: "rectangular", b: b1})
+c2 = ({forma: "rectangular", b: Math.min(b2, b1)})
+E1 = energia(c1, Q, y1)
+Fr1 = froude(c1, Q, y1)
+yc1 = tiranteCritico(c1, Q)
+yc2 = tiranteCritico(c2, Q)
+Emin2 = energia(c2, Q, yc2)
+E2 = E1 - dz
+choque = E2 < Emin2
+alt2 = alternos(c2, Q, E2)
+y2 = choque ? yc2 : (Fr1 < 1 ? alt2.sub : alt2.sup)
+// Con choque en flujo subcrítico, aguas arriba el agua se represa hasta tener E = Emin2 + Δz.
+y1nuevo = choque && Fr1 < 1 ? alternos(c1, Q, Emin2 + dz).sub : NaN
+curva = (s, yc) => d3.range(0, 301).map((i) => {
+  const y = yc * 0.25 + (Math.max(y1, yc) * 2 - yc * 0.25) * i / 300;
+  return {y, E: energia(s, Q, y)};
+})
+Emax = Math.max(E1, Emin2 + dz) * 1.5
+```
+
+```{ojs}
+Plot.plot({
+  height: 340,
+  x: {label: "Energía específica E (m)", grid: true, domain: [0, Emax]},
+  y: {label: "Tirante y (m)", grid: true, domain: [0, Math.max(y1, yc1, Number.isFinite(y1nuevo) ? y1nuevo : 0) * 1.6]},
+  marks: [
+    Plot.line(curva(c1, yc1).filter((p) => p.E <= Emax), {x: "E", y: "y", stroke: "steelblue", strokeWidth: 2}),
+    b2 < b1 ? Plot.line(curva(c2, yc2).filter((p) => p.E <= Emax), {x: "E", y: "y", stroke: "seagreen", strokeWidth: 2, strokeDasharray: "6,3"}) : null,
+    Plot.dot([{E: E1, y: y1}], {x: "E", y: "y", r: 6, fill: "steelblue"}),
+    Plot.dot([{E: choque ? Emin2 : E2, y: y2}], {x: "E", y: "y", r: 6, fill: choque ? "firebrick" : "seagreen"}),
+    Plot.text([{E: E1, y: y1}], {x: "E", y: "y", text: () => "1", dx: 10}),
+    Plot.text([{E: choque ? Emin2 : E2, y: y2}], {x: "E", y: "y", text: () => "2", dx: -10}),
+    Plot.ruleX([E1, E2], {stroke: "gray", strokeDasharray: "3,3"}),
+  ],
+  caption: "Azul: curva E-y aguas arriba. Verde punteada: curva en la contracción (si b₂ < b₁). El punto 2 rojo indica estrangulamiento.",
+})
+```
+
+```{ojs}
+resultados([
+  ["Llegada: E₁", cs(E1), "m", `Fr₁ = ${cs(Fr1)} (${regimen(Fr1)})`],
+  ["Energía disponible en la transición, E₂ = E₁ − Δz", cs(E2), "m"],
+  ["Energía mínima en la transición", cs(Emin2), "m", `yc = ${cs(yc2)} m`],
+  ["Escalón máximo sin choque, E₁ − E mín", cs(E1 - Emin2), "m"],
+  ["Tirante en la transición, y₂", cs(y2), "m", choque ? "crítico (estrangulamiento)" : `superficie ${y2 + dz < y1 ? "baja" : "sube"} ${cs(Math.abs(y2 + dz - y1))} m`],
+  ["Tirante aguas arriba con el choque", Number.isFinite(y1nuevo) ? cs(y1nuevo) : "no aplica", "m",
+   Number.isFinite(y1nuevo) ? `el agua se represa ${cs(y1nuevo - y1)} m` : choque ? "flujo supercrítico: se forma un resalto aguas arriba de la transición" : ""],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Con flujo subcrítico, sube el escalón poco a poco. ¿La superficie del agua baja o sube sobre el escalón? ¿Qué escalón produce el estrangulamiento?
+2. Baja el tirante de llegada hasta que $Fr_1 > 1$ y repite. ¿Por qué ahora el agua sube sobre el escalón?
+3. Sin escalón, estrecha el canal. ¿Coincide el ancho que produce el choque con $b_{min}$ calculado a mano?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Escalón en flujo subcrítico",
+  generar: () => ({q: azar(0.5, 3, 0.1), y1: azar(1, 2.5, 0.1), dz: azar(0.05, 0.25, 0.01)}),
+  enunciado: ({q, y1, dz}) => `Un canal rectangular ancho lleva <strong>q = ${cs(q)} m²/s</strong> con <strong>y₁ = ${cs(y1)} m</strong>. En el fondo hay un escalón de <strong>Δz = ${cs(dz)} m</strong>. Calcula el escalón máximo sin estrangulamiento y el tirante sobre el escalón.`,
+  respuestas: [
+    {etiqueta: "Δz máx =", unidad: "m", valor: ({q, y1}) => y1 + q * q / (19.62 * y1 * y1) - 1.5 * Math.cbrt(q * q / 9.81)},
+    {etiqueta: "y₂ =", unidad: "m", valor: ({q, y1, dz}) => {
+      const E2 = y1 + q * q / (19.62 * y1 * y1) - dz, a = alternos({forma: "rectangular", b: 1}, q, E2);
+      return Number.isFinite(a.sub) ? a.sub : Math.cbrt(q * q / 9.81);
+    }},
+  ],
+  solucion: ({q, y1, dz}) => {
+    const E1 = y1 + q * q / (19.62 * y1 * y1), yc = Math.cbrt(q * q / 9.81), E2 = E1 - dz;
+    const a = alternos({forma: "rectangular", b: 1}, q, E2), ch = !Number.isFinite(a.sub);
+    return `<ol>
+      <li>E₁ = y₁ + q²/(2g y₁²) = ${cs(E1, 4)} m. y_c = (q²/g)^(1/3) = ${cs(yc)} m y E_min = 1,5 y_c = ${cs(1.5 * yc, 4)} m.</li>
+      <li>Δz_max = E₁ − E_min = <strong>${cs(E1 - 1.5 * yc)} m</strong>.</li>
+      <li>${ch ? `Δz > Δz_max: hay estrangulamiento y sobre el escalón el tirante es crítico, <strong>y₂ = ${cs(yc)} m</strong>.`
+        : `E₂ = E₁ − Δz = ${cs(E2, 4)} m. En la rama subcrítica, y₂ + ${cs(q * q / 19.62, 4)}/y₂² = ${cs(E2, 4)} ⇒ <strong>y₂ = ${cs(a.sub)} m</strong>.`}</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Ancho mínimo de una contracción",
+  generar: () => ({b: azar(2, 6, 0.5), Q: azar(2, 15, 0.5), k: azar(1.6, 2.6, 0.1)}),
+  enunciado: ({b, Q, k}) => {
+    const y1 = Number((k * Math.cbrt((Q / b) ** 2 / 9.81)).toPrecision(3));
+    return `Un canal rectangular de <strong>${cs(b)} m</strong> conduce <strong>${cs(Q)} m³/s</strong> con <strong>y₁ = ${cs(y1)} m</strong>. Para instalar un aforador se quiere estrechar el canal sin cambiar el fondo. ¿Cuál es la energía específica y el ancho mínimo sin estrangulamiento?`;
+  },
+  respuestas: [
+    {etiqueta: "E₁ =", unidad: "m", valor: ({b, Q, k}) => { const y1 = Number((k * Math.cbrt((Q / b) ** 2 / 9.81)).toPrecision(3)); return y1 + (Q / (b * y1)) ** 2 / 19.62; }},
+    {etiqueta: "b mín =", unidad: "m", valor: ({b, Q, k}) => {
+      const y1 = Number((k * Math.cbrt((Q / b) ** 2 / 9.81)).toPrecision(3)), E1 = y1 + (Q / (b * y1)) ** 2 / 19.62;
+      return Q / Math.sqrt(9.81 * (2 * E1 / 3) ** 3);
+    }},
+  ],
+  solucion: ({b, Q, k}) => {
+    const y1 = Number((k * Math.cbrt((Q / b) ** 2 / 9.81)).toPrecision(3)), E1 = y1 + (Q / (b * y1)) ** 2 / 19.62;
+    const yc = 2 * E1 / 3;
+    return `<ol>
+      <li>V₁ = Q/(b y₁) = ${cs(Q / (b * y1))} m/s; E₁ = y₁ + V₁²/2g = <strong>${cs(E1)} m</strong>.</li>
+      <li>En el ancho mínimo el flujo es crítico con E_min = E₁, así que y_c = (2/3)E₁ = ${cs(yc)} m.</li>
+      <li>q_c = √(g y_c³) = ${cs(Math.sqrt(9.81 * yc ** 3))} m²/s y b_min = Q/q_c = <strong>${cs(Q / Math.sqrt(9.81 * yc ** 3))} m</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Informe del laboratorio 1:** compara la curva $E$-$y$ medida con la teórica y explica la diferencia en el escalón.
+- **Tarea 1 en GitHub:** agrega tirante crítico y tirantes alternos en `corte1.py`.

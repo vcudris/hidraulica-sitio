@@ -1,0 +1,67 @@
+project:
+  type: website
+  output-dir: _site
+  # Módulos JS y datos que leen los simuladores (import / FileAttachment).
+  resources:
+    - recursos/
+    - datos/
+
+lang: es
+
+website:
+  title: "Hidráulica de Canales"
+  description: "Curso interactivo de Hidráulica de Canales, Ingeniería Ambiental, Unicorsalud."
+  page-navigation: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Inicio
+      - href: programa.qmd
+        text: Programa
+      - href: simuladores.qmd
+        text: Simuladores
+      - href: laboratorios.qmd
+        text: Laboratorios
+      - href: proyecto.qmd
+        text: Proyecto integrador
+      - href: tareas.qmd
+        text: Tareas
+      - href: formulario.qmd
+        text: Formulario
+  sidebar:
+    style: docked
+    search: true
+    contents:
+      - section: "Unidad 1 · Geometría, energía y régimen"
+        contents:
+          - semanas/semana-01.qmd
+          - semanas/semana-02.qmd
+          - semanas/semana-03.qmd
+          - semanas/semana-04.qmd
+          - semanas/semana-05.qmd
+      - section: "Unidad 2 · Flujo uniforme y resalto"
+        contents:
+          - semanas/semana-06.qmd
+          - semanas/semana-07.qmd
+          - semanas/semana-08.qmd
+          - semanas/semana-09.qmd
+          - semanas/semana-10.qmd
+      - section: "Unidad 3 · Flujo gradualmente variado"
+        contents:
+          - semanas/semana-11.qmd
+          - semanas/semana-12.qmd
+          - semanas/semana-13.qmd
+          - semanas/semana-14.qmd
+          - semanas/semana-15.qmd
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    css: recursos/estilos.css
+    toc: true
+    html-math-method: katex
+
+execute:
+  echo: false

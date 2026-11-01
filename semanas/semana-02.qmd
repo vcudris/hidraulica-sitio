@@ -1,0 +1,209 @@
+---
+title: "Semana 2 · Energía específica y número de Froude"
+subtitle: "Unidad 1 · Geometría, energía y régimen"
+---
+
+::: {.callout-note appearance="simple"}
+**RA1.** Analizar el flujo de agua en canales a cielo abierto aplicando los principios de conservación de masa y energía, diferenciando regímenes de flujo (libre/confinado, sub/crítico/supercrítico) mediante el número de Froude.
+
+**Lo que debes lograr esta semana.** Calcular la energía específica, leer la curva $E$-$y$, encontrar los tirantes alternos para una energía dada y clasificar el régimen con el número de Froude.
+:::
+
+## Antes de clase
+
+- Mott y Untener, cap. 14: numerales 14.3 (número de Froude) y 14.7 (energía específica).
+- Chow, cap. 3, *Principios de energía y momentum*: energía específica y curva de energía específica.
+
+## Ideas clave
+
+**Energía específica.** Es la energía por unidad de peso medida **desde el fondo del canal**. Para un caudal fijo depende solo del tirante:
+
+$$
+E = y + \frac{V^2}{2g} = y + \frac{Q^2}{2 g A^2}
+$$
+
+::: {.variables}
+- $E$: energía específica [m].
+- $y$: tirante [m].
+- $V$: velocidad media, $V = Q/A$ [m/s].
+- $Q$: caudal [m³/s].
+- $A$: área mojada, función de $y$ [m²].
+- $g$: aceleración de la gravedad, 9,81 m/s².
+:::
+
+En un canal rectangular conviene trabajar con el **caudal unitario** $q = Q/b$ [m²/s]: $E = y + q^2/(2 g y^2)$.
+
+**Curva $E$-$y$.** Para un mismo $Q$ la curva tiene dos ramas y un mínimo:
+
+- **Rama superior (subcrítica):** tirantes grandes y velocidades bajas. $E$ se acerca a la recta $E = y$.
+- **Rama inferior (supercrítica):** tirantes pequeños y velocidades altas. $E$ crece sin límite cuando $y \to 0$.
+- **Mínimo:** el **tirante crítico** $y_c$, con energía mínima $E_{min}$. Con menos energía que $E_{min}$ el caudal no puede pasar.
+
+Para cada $E > E_{min}$ hay dos tirantes con la misma energía: los **tirantes alternos**, uno subcrítico y otro supercrítico.
+
+**Número de Froude.** Compara la velocidad del agua con la velocidad de una onda pequeña en la superficie, $c = \sqrt{g D}$:
+
+$$
+Fr = \frac{V}{\sqrt{g D}} \qquad D = \frac{A}{T}
+$$
+
+::: {.variables}
+- $Fr$: número de Froude [—].
+- $D$: profundidad hidráulica [m]; en un canal rectangular $D = y$.
+- $T$: ancho superficial [m].
+:::
+
+| Régimen | Froude | Qué significa |
+|---|---|---|
+| Subcrítico (tranquilo) | $Fr < 1$ | Las ondas suben aguas arriba: lo que pase aguas abajo (una compuerta, una presa) se siente aguas arriba. |
+| Crítico | $Fr = 1$ | Energía mínima. Superficie inestable y ondulada: se evita en diseño. |
+| Supercrítico (rápido) | $Fr > 1$ | Las ondas no remontan la corriente: el flujo solo depende de lo que pasa aguas arriba. |
+
+**Hipótesis:** distribución hidrostática de presiones, pendiente pequeña y coeficiente de energía $\alpha = 1$ (velocidad uniforme en la sección).
+
+## Simulador: curva de energía específica
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, geometria, energia, froude, regimen, tiranteCritico, alternos} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof forma = Inputs.radio(["rectangular", "trapecial", "triangular", "circular"], {value: "rectangular", label: "Forma"})
+viewof b = Inputs.range([0.3, 10], {value: 2, step: 0.1, label: "Ancho de fondo b (m)"})
+viewof z = Inputs.range([0, 3], {value: 1, step: 0.25, label: "Talud z (z:1)"})
+viewof D0 = Inputs.range([0.5, 3], {value: 1.5, step: 0.05, label: "Diámetro D₀ (m)"})
+viewof Q = Inputs.range([0.1, 30], {value: 4, step: 0.1, label: "Caudal Q (m³/s)"})
+viewof eRel = Inputs.range([1, 3], {value: 1.5, step: 0.01, label: "Energía disponible E / E mín"})
+```
+
+```{ojs}
+sec = ({forma, b, z, D: D0})
+yc = tiranteCritico(sec, Q)
+Emin = energia(sec, Q, yc)
+E = eRel * Emin
+alt = alternos(sec, Q, E)
+yTope = forma === "circular" ? 0.999 * D0 : Math.max(Number.isFinite(alt.sub) ? alt.sub * 1.25 : 0, 3 * yc)
+Etope = Math.max(E * 1.35, yTope)
+curva = d3.range(0, 401).map((i) => {
+  const y = yc * 0.12 + (yTope - yc * 0.12) * i / 400;
+  return {y, E: energia(sec, Q, y)};
+}).filter((p) => p.E <= Etope)
+puntos = [
+  {E: Emin, y: yc, rotulo: "crítico"},
+  {E, y: alt.sup, rotulo: "supercrítico"},
+  {E, y: alt.sub, rotulo: "subcrítico"},
+].filter((p) => Number.isFinite(p.y))
+```
+
+```{ojs}
+Number.isFinite(yc) ? Plot.plot({
+  height: 360,
+  x: {label: "Energía específica E (m)", domain: [0, Etope], grid: true},
+  y: {label: "Tirante y (m)", domain: [0, yTope], grid: true},
+  marks: [
+    Plot.line([[0, 0], [yTope, yTope]], {stroke: "gray", strokeDasharray: "4,4"}),
+    Plot.line(curva, {x: "E", y: "y", stroke: "steelblue", strokeWidth: 2.5}),
+    Plot.ruleX([E], {stroke: "darkorange", strokeDasharray: "6,4"}),
+    Plot.ruleY([yc], {stroke: "darkorange", strokeOpacity: 0.5}),
+    Plot.dot(puntos, {x: "E", y: "y", r: 5, fill: (d) => d.rotulo === "crítico" ? "darkorange" : "steelblue"}),
+    Plot.text(puntos, {x: "E", y: "y", text: (d) => `${d.rotulo}: y = ${cs(d.y)} m`, dx: 8, textAnchor: "start"}),
+  ],
+  caption: "Curva E-y para el caudal elegido. La línea punteada gris es E = y; la naranja vertical es la energía disponible.",
+}) : html`<p><em>El caudal no cabe en el conducto: aumenta el diámetro o baja el caudal.</em></p>`
+```
+
+```{ojs}
+resultados([
+  ["Tirante crítico, yc", cs(yc), "m"],
+  ["Energía mínima, E mín", cs(Emin), "m"],
+  ["Energía disponible, E", cs(E), "m"],
+  ["Tirante alterno supercrítico", cs(alt.sup), "m", Number.isFinite(alt.sup) ? `V = ${cs(Q / geometria(sec, alt.sup).A)} m/s, Fr = ${cs(froude(sec, Q, alt.sup))}` : ""],
+  ["Tirante alterno subcrítico", cs(alt.sub), "m", Number.isFinite(alt.sub) ? `V = ${cs(Q / geometria(sec, alt.sub).A)} m/s, Fr = ${cs(froude(sec, Q, alt.sub))}` : "el conducto se llena antes"],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Lleva la energía a $E/E_{min} = 1$. ¿Qué pasa con los dos tirantes alternos? ¿Cuánto vale $Fr$ ahí?
+2. En la sección rectangular, compara $E_{min}$ con $y_c$. ¿Obtienes siempre $E_{min} = 1{,}5\,y_c$? Prueba en la trapecial: ¿se cumple?
+3. Duplica el caudal. ¿Hacia dónde se mueve toda la curva? ¿Por qué un canal que lleva más agua necesita más energía para pasar?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Número de Froude y régimen",
+  generar: () => ({b: azar(1, 5, 0.5), Q: azar(1, 15, 0.5), y: azar(0.2, 2, 0.05)}),
+  enunciado: ({b, Q, y}) => `Un canal rectangular de <strong>${cs(b)} m</strong> de ancho conduce <strong>${cs(Q)} m³/s</strong> con un tirante de <strong>${cs(y)} m</strong>. Calcula la velocidad media y el número de Froude, y clasifica el régimen.`,
+  respuestas: [
+    {etiqueta: "V =", unidad: "m/s", valor: ({b, Q, y}) => Q / (b * y)},
+    {etiqueta: "Fr =", unidad: "", valor: ({b, Q, y}) => Q / (b * y) / Math.sqrt(9.81 * y)},
+    {etiqueta: "Régimen", opciones: ["subcrítico", "crítico", "supercrítico"], valor: ({b, Q, y}) => regimen(Q / (b * y) / Math.sqrt(9.81 * y))},
+  ],
+  solucion: ({b, Q, y}) => {
+    const V = Q / (b * y), Fr = V / Math.sqrt(9.81 * y);
+    return `<ol>
+      <li>V = Q/(b y) = ${cs(Q)}/(${cs(b)}·${cs(y)}) = <strong>${cs(V)} m/s</strong>.</li>
+      <li>En un canal rectangular D = y, así que Fr = V/√(g y) = ${cs(V)}/√(9,81·${cs(y)}) = <strong>${cs(Fr)}</strong>.</li>
+      <li>Fr ${Fr < 1 ? "<" : ">"} 1: flujo <strong>${regimen(Fr)}</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Energía específica en un canal trapecial",
+  generar: () => ({b: azar(1, 4, 0.5), z: elegir([1, 1.5, 2]), Q: azar(2, 20, 1), y: azar(0.5, 2, 0.1)}),
+  enunciado: ({b, z, Q, y}) => `Por un canal trapecial con <strong>b = ${cs(b)} m</strong> y taludes <strong>${cs(z)}:1</strong> pasan <strong>${cs(Q)} m³/s</strong> con <strong>y = ${cs(y)} m</strong>. Calcula la velocidad media, la energía específica y el número de Froude.`,
+  respuestas: [
+    {etiqueta: "V =", unidad: "m/s", valor: ({b, z, Q, y}) => Q / ((b + z * y) * y)},
+    {etiqueta: "E =", unidad: "m", valor: ({b, z, Q, y}) => energia({forma: "trapecial", b, z}, Q, y)},
+    {etiqueta: "Fr =", unidad: "", valor: ({b, z, Q, y}) => froude({forma: "trapecial", b, z}, Q, y)},
+  ],
+  solucion: ({b, z, Q, y}) => {
+    const A = (b + z * y) * y, T = b + 2 * z * y, V = Q / A;
+    return `<ol>
+      <li>A = (b + z y) y = ${cs(A)} m²; T = b + 2 z y = ${cs(T)} m; D = A/T = ${cs(A / T)} m.</li>
+      <li>V = Q/A = <strong>${cs(V)} m/s</strong>; V²/2g = ${cs(V * V / 19.62)} m.</li>
+      <li>E = y + V²/2g = <strong>${cs(y + V * V / 19.62)} m</strong>.</li>
+      <li>Fr = V/√(g D) = <strong>${cs(V / Math.sqrt(9.81 * A / T))}</strong>.</li>
+    </ol>
+    <p><em>Error común:</em> usar el tirante y en lugar de la profundidad hidráulica D en el Froude de una sección no rectangular.</p>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Tirante alterno",
+  generar: () => ({q: azar(1, 6, 0.5), sub: Math.random() < 0.5, k: azar(1.3, 2.2, 0.1)}),
+  enunciado: ({q, sub, k}) => {
+    const yc = Math.cbrt(q * q / 9.81), y1 = sub ? k * yc : yc / k;
+    return `Un canal rectangular muy ancho lleva <strong>q = ${cs(q)} m²/s</strong> con un tirante <strong>y₁ = ${cs(y1)} m</strong>. Calcula la energía específica y el tirante alterno y₂ (tanteo o calculadora).`;
+  },
+  respuestas: [
+    {etiqueta: "E =", unidad: "m", valor: ({q, sub, k}) => { const yc = Math.cbrt(q * q / 9.81), y1 = Number((sub ? k * yc : yc / k).toPrecision(3)); return y1 + q * q / (19.62 * y1 * y1); }},
+    {etiqueta: "y₂ =", unidad: "m", valor: ({q, sub, k}) => {
+      const yc = Math.cbrt(q * q / 9.81), y1 = Number((sub ? k * yc : yc / k).toPrecision(3));
+      const a = alternos({forma: "rectangular", b: 1}, q, y1 + q * q / (19.62 * y1 * y1));
+      return sub ? a.sup : a.sub;
+    }},
+  ],
+  solucion: ({q, sub, k}) => {
+    const yc = Math.cbrt(q * q / 9.81), y1 = Number((sub ? k * yc : yc / k).toPrecision(3));
+    const E = y1 + q * q / (19.62 * y1 * y1), a = alternos({forma: "rectangular", b: 1}, q, E);
+    return `<ol>
+      <li>E = y₁ + q²/(2 g y₁²) = ${cs(y1)} + ${cs(q * q)}/(19,62·${cs(y1 * y1)}) = <strong>${cs(E)} m</strong>.</li>
+      <li>y_c = (q²/g)^(1/3) = ${cs(yc)} m. Como y₁ ${sub ? ">" : "<"} y_c, y₁ es ${sub ? "subcrítico" : "supercrítico"} y el alterno es ${sub ? "supercrítico (menor que y_c)" : "subcrítico (mayor que y_c)"}.</li>
+      <li>Resuelve y + ${cs(q * q / 19.62, 4)}/y² = ${cs(E, 4)} en esa rama: <strong>y₂ = ${cs(sub ? a.sup : a.sub)} m</strong>.</li>
+    </ol>
+    <p>La ecuación es cúbica: tiene una raíz negativa sin sentido físico y las dos positivas son los tirantes alternos.</p>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Taller de energía específica y Froude:** curvas $E$-$y$ para dos caudales en el mismo canal y tirantes alternos.
+- **Tarea 1 en GitHub:** agrega energía específica, Froude y régimen en `corte1.py`.

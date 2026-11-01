@@ -1,0 +1,182 @@
+---
+title: "Semana 11 · Ecuación dinámica del flujo gradualmente variado"
+subtitle: "Unidad 3 · Flujo gradualmente variado"
+---
+
+::: {.callout-note appearance="simple"}
+**RA3.** Modelar perfiles de flujo gradualmente variado y aplicar criterios de sostenibilidad ambiental y prevención de riesgos de inundación en el diseño de sistemas hídricos en canales abiertos.
+
+**Lo que debes lograr esta semana.** Deducir la ecuación dinámica del flujo gradualmente variado, enunciar sus hipótesis y usar los signos de su numerador y denominador para saber si el tirante crece o decrece a lo largo del canal.
+:::
+
+## Antes de clase
+
+- Chow, cap. 9, *Teoría y análisis* del flujo gradualmente variado: ecuación dinámica, características y clasificación de los perfiles.
+- Repasa el tirante normal ([semana 6](semana-06.qmd)) y el crítico ([semana 3](semana-03.qmd)).
+
+## Ideas clave
+
+**Qué es.** Cerca de una presa, una compuerta, una caída o un cambio de pendiente, el tirante deja de ser el normal y cambia **poco a poco** a lo largo de cientos o miles de metros. Ese es el flujo gradualmente variado (FGV). Calcularlo responde preguntas como: ¿hasta dónde sube el nivel del río aguas arriba de una presa?
+
+**Ecuación dinámica.** La energía total $H = z + y + V^2/2g$ disminuye a lo largo del canal al ritmo de la pendiente de fricción, $dH/dx = -S_f$. Derivando con $dz/dx = -S_0$ y $d(V^2/2g)/dy = -Fr^2$:
+
+$$
+\frac{dy}{dx} = \frac{S_0 - S_f}{1 - Fr^2}
+$$
+
+::: {.variables}
+- $dy/dx$: cambio del tirante por metro de canal, con $x$ positivo aguas abajo [m/m].
+- $S_0$: pendiente del fondo [m/m].
+- $S_f$: pendiente de fricción, calculada con Manning para el tirante local: $S_f = n^2 Q^2/(A^2 R^{4/3})$ [m/m].
+- $Fr$: número de Froude con el tirante local [—].
+:::
+
+**Hipótesis.** Canal prismático de pendiente pequeña; distribución hidrostática de presiones (líneas de corriente casi paralelas); la pérdida por fricción en cada sección es la del flujo uniforme con la misma velocidad y radio hidráulico (Manning vale localmente); $n$ y $\alpha$ constantes.
+
+**Leer los signos.**
+
+- **Numerador:** si $y > y_n$, entonces $S_f < S_0$ y el numerador es positivo. Si $y < y_n$, es negativo.
+- **Denominador:** si $y > y_c$ (subcrítico), $Fr < 1$ y el denominador es positivo. Si $y < y_c$, es negativo.
+- **Límites:** cuando $y \to y_n$, $dy/dx \to 0$ y el perfil se acerca al flujo uniforme de forma asintótica. Cuando $y \to y_c$, $dy/dx \to \infty$: la superficie se vuelve casi vertical (resalto o caída) y la ecuación deja de valer.
+
+**Tipos de pendiente y zonas.**
+
+| Pendiente | Condición | Letra |
+|---|---|---|
+| Suave | $y_n > y_c$ | M |
+| Fuerte | $y_n < y_c$ | S |
+| Crítica | $y_n = y_c$ | C |
+| Horizontal | $S_0 = 0$, no hay $y_n$ | H |
+| Adversa | $S_0 < 0$, no hay $y_n$ | A |
+
+La **zona 1** está por encima de las dos líneas ($y_n$ y $y_c$), la **zona 2** entre ellas y la **zona 3** por debajo de ambas. El perfil se nombra con la letra y la zona: M1, S2, H3…
+
+| Perfil | Ejemplo típico | $dy/dx$ |
+|---|---|---|
+| M1 | Remanso aguas arriba de una presa en pendiente suave | + |
+| M2 | Aguas arriba de una caída libre | − |
+| M3 | Aguas abajo de una compuerta en pendiente suave, antes del resalto | + |
+| S1 | Aguas arriba de una presa en pendiente fuerte, después de un resalto | + |
+| S2 | Entrada de un canal de pendiente fuerte | − |
+| S3 | Aguas abajo de una compuerta en pendiente fuerte | + |
+| H2, A2 | Aguas arriba de una caída en fondo horizontal o adverso | − |
+| H3, A3 | Aguas abajo de una compuerta en fondo horizontal o adverso | + |
+
+## Simulador: signo de dy/dx
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, froude, regimen, tiranteNormal, tiranteCritico, pendienteFriccion, pendientePerfil, clasificarPerfil} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof b = Inputs.range([0.5, 10], {value: 3, step: 0.1, label: "Ancho b (m), canal rectangular"})
+viewof Q = Inputs.range([0.5, 50], {value: 8, step: 0.5, label: "Caudal Q (m³/s)"})
+viewof n = Inputs.range([0.010, 0.040], {value: 0.015, step: 0.001, label: "Rugosidad n"})
+viewof S0 = Inputs.range([-0.003, 0.03], {value: 0.0008, step: 0.0001, label: "Pendiente S₀ (m/m; 0 horizontal, negativa adversa)"})
+viewof yRel = Inputs.range([0.1, 3], {value: 1.6, step: 0.01, label: "Tirante y / yc"})
+```
+
+```{ojs}
+sec = ({forma: "rectangular", b})
+yc = tiranteCritico(sec, Q)
+yn = tiranteNormal(sec, Q, n, S0)
+y = yRel * yc
+Sf = pendienteFriccion(sec, Q, n, y)
+Fr = froude(sec, Q, y)
+dydx = pendientePerfil(sec, Q, n, S0, y)
+tipo = clasificarPerfil(yn, yc, y, S0)
+curvaD = d3.range(1, 301).map((i) => ({y: 3 * yc * i / 300})).map((p) => ({...p, d: pendientePerfil(sec, Q, n, S0, p.y)})).filter((p) => Math.abs(p.y - yc) / yc > 0.01)
+```
+
+```{ojs}
+Plot.plot({
+  height: 340,
+  x: {label: "dy/dx (escala simétrica logarítmica)", type: "symlog", constant: 1e-4, grid: true},
+  y: {label: "Tirante y (m)", domain: [0, 3 * yc], grid: true},
+  marks: [
+    Plot.ruleX([0]),
+    Plot.ruleY([yc], {stroke: "darkorange", strokeDasharray: "6,4"}),
+    Number.isFinite(yn) ? Plot.ruleY([yn], {stroke: "seagreen", strokeDasharray: "6,4"}) : null,
+    Plot.dot(curvaD, {x: "d", y: "y", r: 1.5, fill: (p) => p.d > 0 ? "steelblue" : "firebrick"}),
+    Plot.dot([{d: dydx, y}], {x: "d", y: "y", r: 7, stroke: "currentColor", fill: "none", strokeWidth: 2}),
+    Plot.text([{y: yc}], {x: () => 0, y: "y", text: () => "yc", dx: -18, fill: "darkorange"}),
+    Number.isFinite(yn) ? Plot.text([{y: yn}], {x: () => 0, y: "y", text: () => "yn", dx: 18, fill: "seagreen"}) : null,
+  ],
+  caption: "dy/dx para cada tirante con este canal. Azul: el tirante crece hacia aguas abajo; rojo: decrece. El círculo es el tirante elegido.",
+})
+```
+
+```{ojs}
+resultados([
+  ["Tirante crítico, yc", cs(yc), "m"],
+  ["Tirante normal, yn", Number.isFinite(yn) ? cs(yn) : "no existe", "m", S0 > 0 ? (yn > yc ? "pendiente suave" : "pendiente fuerte") : S0 === 0 ? "fondo horizontal" : "pendiente adversa"],
+  ["Tirante elegido, y", cs(y), "m", regimen(Fr)],
+  ["Numerador, S₀ − Sf", cs(S0 - Sf), "", S0 - Sf > 0 ? "positivo" : "negativo"],
+  ["Denominador, 1 − Fr²", cs(1 - Fr * Fr), "", 1 - Fr * Fr > 0 ? "positivo" : "negativo"],
+  ["dy/dx", cs(dydx), "m/m", dydx > 0 ? "el tirante crece aguas abajo" : "el tirante decrece aguas abajo"],
+  ["Perfil", tipo, ""],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Con pendiente suave, recorre las tres zonas moviendo $y/y_c$. ¿En qué zonas crece el tirante hacia aguas abajo? Comprueba con la tabla de perfiles.
+2. Pon $S_0 = 0$. ¿Por qué no hay zona 1 en un fondo horizontal?
+3. Acerca el tirante a $y_n$ y luego a $y_c$. ¿Qué diferencia hay en la forma como $dy/dx$ se acerca a cero o se dispara?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Pendiente de la superficie en un punto",
+  generar: () => ({b: azar(2, 6, 0.5), Q: azar(3, 20, 1), n: elegir([0.013, 0.015, 0.02]), S: elegir([0.0005, 0.001, 0.002]), y: azar(0.6, 3, 0.1)}),
+  enunciado: ({b, Q, n, S, y}) => `En un canal rectangular de <strong>${cs(b)} m</strong>, con <strong>Q = ${cs(Q)} m³/s</strong>, <strong>n = ${cs(n)}</strong> y <strong>S₀ = ${cs(S)}</strong>, el tirante en una sección es <strong>${cs(y)} m</strong>. Calcula la pendiente de fricción, el número de Froude y dy/dx.`,
+  respuestas: [
+    {etiqueta: "Sf =", unidad: "", valor: ({b, Q, n, y}) => pendienteFriccion({forma: "rectangular", b}, Q, n, y)},
+    {etiqueta: "Fr =", unidad: "", valor: ({b, Q, y}) => Q / (b * y) / Math.sqrt(9.81 * y)},
+    {etiqueta: "dy/dx =", unidad: "m/m", valor: ({b, Q, n, S, y}) => pendientePerfil({forma: "rectangular", b}, Q, n, S, y)},
+  ],
+  solucion: ({b, Q, n, S, y}) => {
+    const A = b * y, R = A / (b + 2 * y), Sf = (n * Q) ** 2 / (A * A * Math.pow(R, 4 / 3)), Fr = Q / A / Math.sqrt(9.81 * y);
+    return `<ol>
+      <li>A = ${cs(A)} m², R = ${cs(R)} m.</li>
+      <li>S_f = n²Q²/(A² R^(4/3)) = <strong>${cs(Sf)}</strong>.</li>
+      <li>Fr = Q/(A√(g y)) = <strong>${cs(Fr)}</strong>.</li>
+      <li>dy/dx = (S₀ − S_f)/(1 − Fr²) = (${cs(S)} − ${cs(Sf)})/(1 − ${cs(Fr * Fr)}) = <strong>${cs((S - Sf) / (1 - Fr * Fr))}</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Clasifica el perfil",
+  generar: () => {
+    const caso = elegir(["suave", "fuerte", "horizontal", "adversa"]);
+    const yc = azar(0.5, 1.5, 0.05);
+    const yn = caso === "suave" ? yc * azar(1.3, 2, 0.1) : caso === "fuerte" ? yc * azar(0.4, 0.75, 0.05) : NaN;
+    const ref = [yc, Number.isFinite(yn) ? yn : yc].sort((p, q) => p - q);
+    const zona = Number.isFinite(yn) ? elegir([1, 2, 3]) : elegir([2, 3]);
+    const y = zona === 1 ? ref[1] * 1.4 : zona === 2 ? (Number.isFinite(yn) ? (ref[0] + ref[1]) / 2 : yc * 1.5) : ref[0] * 0.6;
+    return {caso, yc, yn, y: Number(y.toPrecision(3))};
+  },
+  enunciado: ({caso, yc, yn, y}) => `Un canal tiene pendiente <strong>${caso}</strong>. El tirante crítico es <strong>${cs(yc)} m</strong>${Number.isFinite(yn) ? `, el normal es <strong>${cs(yn)} m</strong>` : " (no hay tirante normal)"} y en una sección el tirante es <strong>${cs(y)} m</strong>. ¿Qué perfil de flujo hay y cómo cambia el tirante hacia aguas abajo?`,
+  respuestas: [
+    {etiqueta: "Perfil", opciones: ["M1", "M2", "M3", "S1", "S2", "S3", "H2", "H3", "A2", "A3"], valor: ({caso, yc, yn, y}) => clasificarPerfil(yn, yc, y, caso === "horizontal" ? 0 : caso === "adversa" ? -0.001 : 0.001)},
+    {etiqueta: "Hacia aguas abajo, y…", opciones: ["crece", "decrece"], valor: ({caso, yc, yn, y}) => ["M1", "M3", "S1", "S3", "H3", "A3"].includes(clasificarPerfil(yn, yc, y, caso === "horizontal" ? 0 : caso === "adversa" ? -0.001 : 0.001)) ? "crece" : "decrece"},
+  ],
+  solucion: ({caso, yc, yn, y}) => {
+    const t = clasificarPerfil(yn, yc, y, caso === "horizontal" ? 0 : caso === "adversa" ? -0.001 : 0.001);
+    return `<ol>
+      <li>Letra: pendiente ${caso} ⇒ <strong>${t[0]}</strong>.</li>
+      <li>Zona: y = ${cs(y)} m frente a y_c = ${cs(yc)} m${Number.isFinite(yn) ? ` y y_n = ${cs(yn)} m` : ""} ⇒ zona <strong>${t[1]}</strong>.</li>
+      <li>Perfil <strong>${t}</strong>: numerador ${Number.isFinite(yn) ? (y > yn ? "+" : "−") : (caso === "horizontal" ? "− (S₀ = 0)" : "− (S₀ < 0)")}, denominador ${y > yc ? "+" : "−"} ⇒ el tirante <strong>${["M1", "M3", "S1", "S3", "H3", "A3"].includes(t) ? "crece" : "decrece"}</strong> hacia aguas abajo.</li>
+    </ol>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Taller de flujo gradualmente variado:** dibuja a mano los perfiles posibles en un canal que pasa de pendiente suave a fuerte, con una compuerta y una caída.
+- **Tarea 3 en GitHub:** empieza `corte3.py` con la pendiente de fricción, la ecuación dinámica y la clasificación de perfiles.

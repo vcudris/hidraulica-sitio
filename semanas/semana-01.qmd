@@ -1,0 +1,182 @@
+---
+title: "Semana 1 · Flujo libre y geometría del canal"
+subtitle: "Unidad 1 · Geometría, energía y régimen"
+---
+
+::: {.callout-note appearance="simple"}
+**RA1.** Analizar el flujo de agua en canales a cielo abierto aplicando los principios de conservación de masa y energía, diferenciando regímenes de flujo (libre/confinado, sub/crítico/supercrítico) mediante el número de Froude.
+
+**Lo que debes lograr esta semana.** Distinguir el flujo libre del confinado, clasificar un flujo según el tiempo y el espacio, y calcular los elementos geométricos ($A$, $P$, $T$, $R$, $D$) de secciones rectangulares, trapeciales, triangulares y circulares.
+:::
+
+## Antes de clase
+
+- Mott y Untener, *Mecánica de fluidos aplicada*, cap. 14: numerales 14.1 a 14.3 y 14.5.
+- Chow, *Hidráulica de canales abiertos*, cap. 1 (tipos de flujo y estado del flujo) y cap. 2 (elementos geométricos de la sección).
+
+## Ideas clave
+
+**Flujo libre y flujo confinado.** En una tubería llena el agua se mueve por diferencia de presión y llena toda la sección. En un canal el agua tiene una **superficie libre** a presión atmosférica y se mueve por la componente de su peso a lo largo de la pendiente. Por eso, en un canal la línea piezométrica coincide con la superficie del agua, y el tirante, el caudal y la pendiente dependen unos de otros. Un colector de alcantarillado que trabaja parcialmente lleno es un canal, aunque sea un tubo cerrado.
+
+**Clasificación del flujo.**
+
+- **Según el tiempo:** permanente, si el tirante y la velocidad en un punto no cambian con el tiempo; no permanente, como una creciente.
+- **Según el espacio:** uniforme, si el tirante es el mismo en todas las secciones; variado, si cambia. El flujo variado es **gradual** (remanso aguas arriba de una presa) o **rápido** (resalto hidráulico, caída libre).
+- **Según la viscosidad y la gravedad:** laminar o turbulento con el número de Reynolds; subcrítico, crítico o supercrítico con el número de Froude (semana 2).
+
+**Elementos geométricos.** Todos dependen del tirante $y$:
+
+$$
+R = \frac{A}{P} \qquad D = \frac{A}{T}
+$$
+
+::: {.variables}
+- $y$: tirante, profundidad del agua desde el punto más bajo del fondo [m].
+- $A$: área mojada, área de la sección ocupada por el agua [m²].
+- $P$: perímetro mojado, longitud del contorno en contacto con el agua; no incluye la superficie libre [m].
+- $T$: ancho superficial, ancho de la superficie libre [m].
+- $R$: radio hidráulico [m].
+- $D$: profundidad hidráulica [m].
+:::
+
+| Sección | $A$ | $P$ | $T$ |
+|---|---|---|---|
+| Rectangular | $b\,y$ | $b + 2y$ | $b$ |
+| Trapecial | $(b + z y)\,y$ | $b + 2y\sqrt{1+z^2}$ | $b + 2 z y$ |
+| Triangular | $z y^2$ | $2y\sqrt{1+z^2}$ | $2 z y$ |
+| Circular | $\tfrac{D_0^2}{8}(\theta - \operatorname{sen}\theta)$ | $\tfrac{\theta D_0}{2}$ | $D_0 \operatorname{sen}\tfrac{\theta}{2}$ |
+
+::: {.variables}
+- $b$: ancho de fondo [m].
+- $z$: talud, metros horizontales por cada metro vertical [—].
+- $D_0$: diámetro del conducto circular [m].
+- $\theta$: ángulo central que abarca el agua, $\theta = 2\arccos(1 - 2y/D_0)$ [rad].
+:::
+
+**Número de Reynolds.** En canales se usa el radio hidráulico como longitud característica:
+
+$$
+Re = \frac{V R}{\nu}
+$$
+
+::: {.variables}
+- $V$: velocidad media, $V = Q/A$ [m/s].
+- $\nu$: viscosidad cinemática del agua, $1{,}0 \times 10^{-6}$ m²/s a unos 20 °C [m²/s].
+:::
+
+Con esta definición (Chow), el flujo es laminar si $Re < 500$ y turbulento si $Re > 2000$. Casi todos los canales reales son turbulentos.
+
+## Simulador: sección del canal
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, geometria, reynolds, regimenViscoso, dibujarSeccion} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof forma = Inputs.radio(["rectangular", "trapecial", "triangular", "circular"], {value: "trapecial", label: "Forma"})
+viewof b = Inputs.range([0.2, 10], {value: 2, step: 0.1, label: "Ancho de fondo b (m)"})
+viewof z = Inputs.range([0, 3], {value: 1.5, step: 0.25, label: "Talud z (z:1)"})
+viewof D0 = Inputs.range([0.3, 3], {value: 1.2, step: 0.05, label: "Diámetro D₀ (m)"})
+viewof yRel = Inputs.range([0.05, 1], {value: 0.5, step: 0.01, label: "Tirante y (fracción de 3 m o de D₀)"})
+viewof Q = Inputs.range([0.05, 30], {value: 3, step: 0.05, label: "Caudal Q (m³/s)"})
+```
+
+```{ojs}
+sec = ({forma, b, z, D: D0})
+y = forma === "circular" ? yRel * D0 : yRel * 3
+G = geometria(sec, y)
+V = Q / G.A
+Re = reynolds(sec, Q, y)
+```
+
+```{ojs}
+dibujarSeccion(sec, y)
+```
+
+El dibujo está a escala. En la sección rectangular el talud no se usa; en la triangular no se usa el ancho de fondo; en la circular solo cuenta el diámetro.
+
+```{ojs}
+resultados([
+  ["Tirante, y", cs(y), "m", forma === "circular" ? `${cs(100 * y / D0, 3)} % del diámetro` : ""],
+  ["Área mojada, A", cs(G.A), "m²"],
+  ["Perímetro mojado, P", cs(G.P), "m"],
+  ["Ancho superficial, T", cs(G.T), "m"],
+  ["Radio hidráulico, R = A/P", cs(G.R), "m"],
+  ["Profundidad hidráulica, D = A/T", cs(G.Dh), "m"],
+  ["Velocidad media, V = Q/A", cs(V), "m/s"],
+  ["Reynolds, Re = VR/ν", cs(Re), "", regimenViscoso(Re)],
+])
+```
+
+**Preguntas para explorar:**
+
+1. En la sección rectangular, sube el tirante hasta que $y = b$. ¿El radio hidráulico sigue creciendo al mismo ritmo? ¿Por qué un canal muy ancho tiene $R \approx y$?
+2. En la circular, busca el tirante con el mayor radio hidráulico. ¿Es a tubo lleno? Compara con el valor de $R$ a sección llena, $D_0/4$.
+3. Baja el caudal hasta $0{,}05$ m³/s con un tirante grande. ¿Llegas a flujo laminar? ¿Qué tan lento tendría que ir el agua?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Elementos geométricos de un canal trapecial",
+  generar: () => ({b: azar(1, 6, 0.5), z: elegir([0.5, 1, 1.5, 2]), y: azar(0.4, 2.5, 0.1)}),
+  enunciado: ({b, z, y}) => `Un canal trapecial tiene ancho de fondo <strong>b = ${cs(b)} m</strong>, taludes <strong>${cs(z)}:1</strong> y conduce agua con un tirante <strong>y = ${cs(y)} m</strong>. Calcula el área mojada, el perímetro mojado y el radio hidráulico.`,
+  respuestas: [
+    {etiqueta: "A =", unidad: "m²", valor: ({b, z, y}) => (b + z * y) * y},
+    {etiqueta: "P =", unidad: "m", valor: ({b, z, y}) => b + 2 * y * Math.sqrt(1 + z * z)},
+    {etiqueta: "R =", unidad: "m", valor: ({b, z, y}) => (b + z * y) * y / (b + 2 * y * Math.sqrt(1 + z * z))},
+  ],
+  solucion: ({b, z, y}) => {
+    const A = (b + z * y) * y, P = b + 2 * y * Math.sqrt(1 + z * z);
+    return `<ol>
+      <li>A = (b + z y) y = (${cs(b)} + ${cs(z)}·${cs(y)})·${cs(y)} = <strong>${cs(A)} m²</strong>.</li>
+      <li>P = b + 2y√(1 + z²) = ${cs(b)} + 2·${cs(y)}·√(1 + ${cs(z * z)}) = <strong>${cs(P)} m</strong>.</li>
+      <li>R = A/P = <strong>${cs(A / P)} m</strong>.</li>
+    </ol>
+    <p><em>Error común:</em> incluir el ancho superficial T en el perímetro mojado. La superficie libre no roza con ninguna pared.</p>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Colector circular parcialmente lleno",
+  generar: () => ({D: azar(0.4, 1.5, 0.1), f: azar(0.3, 0.85, 0.05)}),
+  enunciado: ({D, f}) => `Un colector de <strong>${cs(D)} m</strong> de diámetro trabaja con un tirante igual al <strong>${cs(100 * f)} %</strong> del diámetro. Calcula el ángulo central θ, el área mojada y el radio hidráulico.`,
+  respuestas: [
+    {etiqueta: "θ =", unidad: "rad", valor: ({f}) => 2 * Math.acos(1 - 2 * f)},
+    {etiqueta: "A =", unidad: "m²", valor: ({D, f}) => geometria({forma: "circular", D}, f * D).A},
+    {etiqueta: "R =", unidad: "m", valor: ({D, f}) => geometria({forma: "circular", D}, f * D).R},
+  ],
+  solucion: ({D, f}) => {
+    const y = f * D, th = 2 * Math.acos(1 - 2 * f), G = geometria({forma: "circular", D}, y);
+    return `<ol>
+      <li>y = ${cs(f)}·${cs(D)} = ${cs(y)} m; θ = 2 arccos(1 − 2y/D₀) = 2 arccos(${cs(1 - 2 * f)}) = <strong>${cs(th)} rad</strong>.</li>
+      <li>A = D₀²(θ − sen θ)/8 = ${cs(D * D)}·(${cs(th, 4)} − ${cs(Math.sin(th), 4)})/8 = <strong>${cs(G.A)} m²</strong>.</li>
+      <li>P = θ D₀/2 = ${cs(G.P)} m; R = A/P = <strong>${cs(G.R)} m</strong>.</li>
+    </ol>
+    <p>Pon la calculadora en radianes: el seno de θ en grados da un área sin sentido.</p>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Tirante a partir del área",
+  generar: () => ({z: elegir([1, 1.5, 2]), A: azar(0.5, 4, 0.1)}),
+  enunciado: ({z, A}) => `Una cuneta triangular de taludes <strong>${cs(z)}:1</strong> lleva un área mojada de <strong>${cs(A)} m²</strong>. ¿Qué tirante tiene y cuál es su ancho superficial?`,
+  respuestas: [
+    {etiqueta: "y =", unidad: "m", valor: ({z, A}) => Math.sqrt(A / z)},
+    {etiqueta: "T =", unidad: "m", valor: ({z, A}) => 2 * z * Math.sqrt(A / z)},
+  ],
+  solucion: ({z, A}) => `<ol>
+      <li>A = z y² ⇒ y = √(A/z) = √(${cs(A)}/${cs(z)}) = <strong>${cs(Math.sqrt(A / z))} m</strong>.</li>
+      <li>T = 2 z y = <strong>${cs(2 * z * Math.sqrt(A / z))} m</strong>.</li>
+    </ol>`,
+})
+```
+
+## Después de clase
+
+- **Taller de parámetros geométricos:** ejercicios resueltos de Mott, cap. 14, con secciones rectangulares, trapeciales y circulares.
+- **Tarea 1 en GitHub:** empieza `corte1.py` con las funciones de geometría.

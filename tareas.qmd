@@ -1,0 +1,46 @@
+---
+title: "Tareas en GitHub"
+---
+
+En cada tarea programas en Python los cálculos que haces a mano en clase. Las pruebas automáticas te dicen al instante qué funciones están bien. Programar una fórmula te obliga a entender sus unidades, sus hipótesis y sus casos límite, y te deja una herramienta que puedes usar en el proyecto integrador.
+
+| # | Repositorio | Archivo que completas | Unidad | Abre | Cierra |
+|---|---|---|---|---|---|
+| 1 | `tarea-1-tu-usuario` | `src/tarea/corte1.py` | 1: geometría, energía, régimen y aforo | Semana 1 | Antes del Parcial 1 (semana 5) |
+| 2 | `tarea-2-tu-usuario` | `src/tarea/corte2.py` | 2: Manning, diseño, resalto y compuertas | Semana 6 | Antes del Parcial 2 (semana 10) |
+| 3 | `tarea-3-tu-usuario` | `src/tarea/corte3.py` | 3: flujo gradualmente variado y secciones compuestas | Semana 11 | Semana 15 |
+
+Los tres repositorios salen de la misma plantilla y traen los tres archivos, pero en cada tarea **solo se revisa y se califica el archivo de esa tarea**.
+
+## Qué programas en cada tarea
+
+**Tarea 1.** Elementos geométricos de secciones rectangular, trapecial y circular; números de Froude y Reynolds; régimen; energía específica; tirante crítico rectangular y trapecial (por bisección); tirantes alternos; caudal en vertederos triangular y rectangular.
+
+**Tarea 2.** Caudal y velocidad con Manning; coeficiente de Chezy; tirante normal rectangular y trapecial; sección trapecial de máxima eficiencia; esfuerzo cortante medio; tirante conjugado, pérdida, longitud y tipo de resalto; caudal y fuerza en una compuerta.
+
+**Tarea 3.** Pendiente de fricción; pendiente del perfil (ecuación dinámica); clasificación de perfiles; método del paso directo; $n$ equivalente de Horton; caudal por subsecciones; caudal por sección-pendiente.
+
+## Cómo trabajar una tarea
+
+1. El docente crea tu repositorio privado `tarea-N-tu-usuario` y te invita. Acepta la invitación que llega a tu correo.
+2. En tu repositorio, ve a **Issues → Laboratorio guiado**. El bot te guía paso a paso: crear la rama `mi-solucion`, resolver, abrir un Pull Request.
+3. Programa en **Codespaces** (botón verde *Code* → *Codespaces*): no necesitas instalar nada.
+4. Cada vez que haces push, las pruebas corren solas. Mira el resultado en la pestaña **Actions**.
+
+## Qué se evalúa
+
+- **Pruebas visibles** (`tests/`): retroalimentación inmediata. No son la nota.
+- **Pruebas ocultas** del docente: más casos, valores límite y entradas inválidas. Definen la nota de la tarea, en escala de 0,0 a 5,0, que cuenta dentro de las actividades formativas del corte.
+- **Revisión por pares** en el Pull Request, con la rúbrica de la plantilla.
+
+## Reglas de las funciones
+
+- **Unidades SI** en todas las funciones: m, s, m³/s, N, Pa. Convierte antes de llamar: 1 L/s = 10⁻³ m³/s, 1 cm = 10⁻² m.
+- **$g = 9{,}81$ m/s²**, $\gamma = 9810$ N/m³ y $\rho = 1000$ kg/m³ (constantes al inicio de cada archivo).
+- **Textos sin tildes** en los resultados de clasificación: `"subcritico"`, `"critico"`, `"supercritico"`, `"debil"`…
+- **Entradas imposibles** (ancho o tirante cero o negativo, tirante mayor que el diámetro, energía menor que la mínima…) deben lanzar `ValueError` con un mensaje claro.
+
+## Cuida tus horas de Codespaces
+
+- Detén el Codespace al terminar: menú ☰ → *Stop Current Codespace*.
+- Configura el apagado automático en 15 o 30 minutos: <https://github.com/settings/codespaces> → *Default idle timeout*.

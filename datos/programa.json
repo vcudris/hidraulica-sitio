@@ -1,0 +1,23 @@
+{
+  "periodo": "2026-2",
+  "primera_clase": "2026-07-27",
+  "horario": "Lunes y jueves, 4 horas semanales",
+  "semanas": [
+    { "n": 1,  "unidad": "U1", "tema": "Flujo libre y confinado, aplicaciones ambientales, elementos geométricos de la sección" },
+    { "n": 2,  "unidad": "U1", "tema": "Energía específica, curva E-y, tirantes alternos y número de Froude" },
+    { "n": 3,  "unidad": "U1", "tema": "Flujo crítico; caso del colector pluvial circular al 60 %", "evaluacion": "Taller evaluativo" },
+    { "n": 4,  "unidad": "U1", "tema": "Transiciones: escalón y contracción en el fondo", "laboratorio": "Lab. 1: energía específica y régimen" },
+    { "n": 5,  "unidad": "U1", "tema": "Distribución de velocidades, aforo directo y vertederos", "laboratorio": "Lab. 2: geometría y aforo", "evaluacion": "Parcial 1 · fin del corte 1" },
+    { "n": 6,  "unidad": "U2", "tema": "Flujo uniforme: ecuaciones de Manning y Chezy" },
+    { "n": 7,  "unidad": "U2", "tema": "Diseño de canales no erosionables y erosionables" },
+    { "n": 8,  "unidad": "U2", "tema": "Principio de momentum y tipos de resalto hidráulico" },
+    { "n": 9,  "unidad": "U2", "tema": "Resalto como disipador de energía", "laboratorio": "Lab. 3: flujo uniforme (Manning y Chezy)" },
+    { "n": 10, "unidad": "U2", "tema": "Compuertas: caudal, fuerza y resalto aguas abajo", "laboratorio": "Lab. 4: resalto y momentum con compuerta", "evaluacion": "Parcial 2 tipo Saber Pro · fin del corte 2" },
+    { "n": 11, "unidad": "U3", "tema": "Flujo gradualmente variado: ecuación dinámica" },
+    { "n": 12, "unidad": "U3", "tema": "Clasificación de perfiles de flujo y secciones de control", "laboratorio": "Lab. 5: perfiles en canal inclinado" },
+    { "n": 13, "unidad": "U3", "tema": "Métodos de cálculo de perfiles; consideraciones ambientales" },
+    { "n": 14, "unidad": "U3", "tema": "Sostenibilidad, canales con vegetación y secciones compuestas", "laboratorio": "Lab. 6: método sección-pendiente (salida de campo)" },
+    { "n": 15, "unidad": "U3", "tema": "Canal completo: compuerta, resalto y flujo uniforme", "evaluacion": "Sustentación del proyecto integrador · fin del corte 3" },
+    { "n": 16, "unidad": "—",  "tema": "Pruebas finales", "evaluacion": "Examen final" }
+  ]
+}

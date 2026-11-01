@@ -1,0 +1,193 @@
+---
+title: "Semana 7 · Diseño de canales"
+subtitle: "Unidad 2 · Flujo uniforme y resalto"
+---
+
+::: {.callout-note appearance="simple"}
+**RA2.** Diseñar y evaluar canales erosionables y no erosionables aplicando las ecuaciones de flujo uniforme (Manning y Chezy) y el principio de momentum, incluyendo el análisis del resalto hidráulico como disipador de energía.
+
+**Lo que debes lograr esta semana.** Dimensionar un canal revestido con la sección de máxima eficiencia y un canal en tierra que no se erosione, comprobando velocidades permisibles, régimen y borde libre.
+:::
+
+## Antes de clase
+
+- Chow, cap. 7, *Diseño de canales para flujo uniforme*: canales no erosionables, canales erosionables (velocidad máxima permisible y fuerza tractiva) y borde libre.
+- Mott y Untener, cap. 14: numeral 14.6 (formas más eficientes de canales abiertos).
+
+## Ideas clave
+
+**Canal no erosionable (revestido).** El revestimiento de concreto, mampostería o geomembrana resiste velocidades altas. El diseño busca:
+
+- **Velocidad mínima** de 0,6 a 0,9 m/s para que no se depositen sedimentos ni crezca vegetación (Chow).
+- **Evitar el flujo casi crítico** (Froude entre 0,8 y 1,2, aproximadamente): la superficie se vuelve ondulada e inestable.
+- **Sección de máxima eficiencia hidráulica:** la que conduce el caudal con el menor perímetro mojado, es decir, con menos revestimiento y menos excavación.
+
+**Sección de máxima eficiencia.** Para un talud $z$ dado, la sección trapecial óptima cumple:
+
+$$
+b = 2\,y\left(\sqrt{1+z^2} - z\right) \qquad R = \frac{y}{2}
+$$
+
+::: {.variables}
+- $b$: ancho de fondo [m]; $y$: tirante [m]; $z$: talud [—].
+- $R$: radio hidráulico [m]; en la sección óptima es la mitad del tirante.
+:::
+
+En la rectangular ($z = 0$) queda $b = 2y$. La mejor de todas las trapeciales es medio hexágono, con $z = 1/\sqrt{3} \approx 0{,}577$. En la práctica el talud lo fija la estabilidad del terreno: roca, casi vertical; tierra firme, 1:1; tierra arenosa, 1,5:1 a 2:1; arena suelta, 3:1.
+
+**Canal erosionable (en tierra).** El agua no debe arrastrar el material del contorno. Dos criterios:
+
+- **Velocidad máxima permisible:** la velocidad media no debe superar la del suelo (tabla de Fortier y Scobey en Chow).
+- **Fuerza tractiva:** el esfuerzo cortante promedio que el agua ejerce sobre el contorno no debe superar el que resiste el suelo.
+
+$$
+\tau_0 = \gamma\,R\,S_0
+$$
+
+::: {.variables}
+- $\tau_0$: esfuerzo cortante promedio sobre el perímetro mojado [Pa].
+- $\gamma$: peso específico del agua, 9810 N/m³.
+- $S_0$: pendiente del fondo [m/m].
+:::
+
+En un canal trapecial ancho, el esfuerzo máximo en el fondo es cercano a $\gamma\,y\,S_0$ y en los taludes cercano a $0{,}76\,\gamma\,y\,S_0$.
+
+| Material (agua limpia) | $n$ | $V_{max}$ (m/s) |
+|---|---|---|
+| Arena fina coloidal | 0,020 | 0,46 |
+| Franco arenoso no coloidal | 0,020 | 0,53 |
+| Franco limoso no coloidal | 0,020 | 0,61 |
+| Franco firme ordinario | 0,020 | 0,76 |
+| Grava fina | 0,020 | 0,76 |
+| Arcilla rígida muy coloidal | 0,025 | 1,14 |
+| Grava gruesa no coloidal | 0,025 | 1,22 |
+| Cantos rodados y guijarros | 0,035 | 1,52 |
+| Esquistos y arcillas duras | 0,025 | 1,83 |
+
+**Borde libre.** Es la distancia vertical entre la superficie del agua y la corona del canal; absorbe oleaje, curvas y errores en $n$. El USBR propone como guía $F = \sqrt{C\,y}$, con $C$ de 0,46 para caudales de 0,6 m³/s a 0,76 para 85 m³/s ($F$ y $y$ en metros).
+
+## Simulador: diseño de un canal trapecial
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, geometria, froude, regimen, caudalManning, biseccion, bordeLibre, RUGOSIDAD, SUELOS, GAMMA, dibujarSeccion} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof tipo = Inputs.radio(["revestido", "en tierra"], {value: "revestido", label: "Canal"})
+viewof revest = Inputs.select(["Concreto con llana", "Concreto sin pulir", "Mampostería de piedra con mortero", "Asfalto liso"], {value: "Concreto sin pulir", label: "Revestimiento"})
+viewof suelo = Inputs.select(Object.keys(SUELOS), {value: "Franco firme ordinario", label: "Suelo (canal en tierra)"})
+viewof Q = Inputs.range([0.1, 40], {value: 5, step: 0.1, label: "Caudal de diseño Q (m³/s)"})
+viewof S0 = Inputs.range([0.0001, 0.01], {value: 0.0005, step: 0.0001, label: "Pendiente S₀ (m/m)"})
+viewof z = Inputs.range([0, 3], {value: 1.5, step: 0.25, label: "Talud z (z:1)"})
+viewof m = Inputs.range([0, 8], {value: 2, step: 0.1, label: "Relación de forma b/y"})
+```
+
+```{ojs}
+n = tipo === "revestido" ? RUGOSIDAD[revest] : SUELOS[suelo].n
+Vmax = tipo === "revestido" ? Infinity : SUELOS[suelo].V
+mOpt = 2 * (Math.sqrt(1 + z * z) - z)
+disenar = (rel) => {
+  if (rel === 0 && z === 0) rel = 0.1; // sin ancho ni talud no hay sección
+  const f =(y) => caudalManning({forma: "trapecial", b: rel * y, z}, n, S0, y) - Q;
+  let hi = 1;
+  while (f(hi) < 0) hi *= 2;
+  const y = biseccion(f, 1e-4, hi), s = {forma: "trapecial", b: rel * y, z}, G = geometria(s, y);
+  return {y, b: rel * y, s, G, V: Q / G.A, Fr: froude(s, Q, y), tau: GAMMA * G.R * S0};
+}
+d = disenar(m)
+dOpt = disenar(mOpt)
+F = bordeLibre(Q, d.y).F
+```
+
+```{ojs}
+dibujarSeccion(d.s, d.y, {marcas: [{y: d.y + F, texto: "corona"}]})
+```
+
+```{ojs}
+chequeo = (ok) => ok ? "✔ cumple" : "✘ no cumple"
+resultados([
+  ["Rugosidad, n", cs(n), "s/m^1/3"],
+  ["Tirante normal, y", cs(d.y), "m"],
+  ["Ancho de fondo, b", cs(d.b), "m"],
+  ["Perímetro mojado, P", cs(d.G.P), "m", `óptima: ${cs(dOpt.G.P)} m con b/y = ${cs(mOpt)}`],
+  ["Velocidad media, V", cs(d.V), "m/s", `mínima 0,6 m/s: ${chequeo(d.V >= 0.6)}`],
+  ["Velocidad máxima permisible", Number.isFinite(Vmax) ? cs(Vmax) : "—", "m/s", Number.isFinite(Vmax) ? chequeo(d.V <= Vmax) : "revestido: la controla la abrasión"],
+  ["Froude", cs(d.Fr), "", `${regimen(d.Fr)}; ${d.Fr > 0.8 && d.Fr < 1.2 ? "✘ casi crítico, superficie inestable" : "✔ lejos del crítico"}`],
+  ["Esfuerzo cortante medio, τ₀ = γRS₀", cs(d.tau), "Pa"],
+  ["Borde libre (USBR)", cs(F), "m", `profundidad total ${cs(d.y + F)} m`],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Mueve $b/y$ y observa el perímetro mojado. ¿Dónde está el mínimo? Compáralo con la fórmula de la sección óptima.
+2. Pasa a canal en tierra con arena fina coloidal. ¿Puedes cumplir la velocidad máxima? Prueba con menos pendiente o con un canal más ancho y bajo.
+3. Con un suelo resistente, ¿la sección óptima (más profunda) cumple la velocidad permisible? ¿Por qué los canales en tierra suelen ser anchos y poco profundos?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Sección rectangular de máxima eficiencia",
+  generar: () => ({Q: azar(0.5, 10, 0.5), n: elegir([0.013, 0.015]), S: elegir([0.0005, 0.001, 0.002])}),
+  enunciado: ({Q, n, S}) => `Se quiere un canal rectangular de concreto (<strong>n = ${cs(n)}</strong>) con la sección de máxima eficiencia para <strong>${cs(Q)} m³/s</strong> con pendiente <strong>${cs(S)}</strong>. Calcula el tirante, el ancho y la velocidad.`,
+  respuestas: [
+    {etiqueta: "y =", unidad: "m", valor: ({Q, n, S}) => Math.pow(n * Q * Math.pow(2, 2 / 3) / (2 * Math.sqrt(S)), 3 / 8)},
+    {etiqueta: "b =", unidad: "m", valor: ({Q, n, S}) => 2 * Math.pow(n * Q * Math.pow(2, 2 / 3) / (2 * Math.sqrt(S)), 3 / 8)},
+    {etiqueta: "V =", unidad: "m/s", valor: ({Q, n, S}) => Q / (2 * Math.pow(n * Q * Math.pow(2, 2 / 3) / (2 * Math.sqrt(S)), 3 / 4))},
+  ],
+  solucion: ({Q, n, S}) => {
+    const y = Math.pow(n * Q * Math.pow(2, 2 / 3) / (2 * Math.sqrt(S)), 3 / 8);
+    return `<ol>
+      <li>Sección óptima: b = 2y, A = 2y², R = y/2.</li>
+      <li>Manning: Q = (1/n)(2y²)(y/2)^(2/3) S^(1/2) ⇒ y^(8/3) = n Q 2^(2/3)/(2√S) = ${cs(n * Q * Math.pow(2, 2 / 3) / (2 * Math.sqrt(S)), 4)}.</li>
+      <li><strong>y = ${cs(y)} m</strong>, <strong>b = ${cs(2 * y)} m</strong>, <strong>V = Q/A = ${cs(Q / (2 * y * y))} m/s</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Esfuerzo cortante sobre el fondo",
+  generar: () => ({b: azar(2, 8, 0.5), y: azar(0.5, 2, 0.1), z: elegir([1.5, 2, 3]), S: elegir([0.0003, 0.0005, 0.001, 0.002])}),
+  enunciado: ({b, y, z, S}) => `Un canal en tierra trapecial con <strong>b = ${cs(b)} m</strong>, taludes <strong>${cs(z)}:1</strong> y pendiente <strong>${cs(S)}</strong> lleva un tirante de <strong>${cs(y)} m</strong>. Calcula el esfuerzo cortante promedio τ₀ y el máximo aproximado en el fondo.`,
+  respuestas: [
+    {etiqueta: "τ₀ =", unidad: "Pa", valor: ({b, y, z, S}) => 9810 * geometria({forma: "trapecial", b, z}, y).R * S},
+    {etiqueta: "τ fondo ≈", unidad: "Pa", valor: ({y, S}) => 9810 * y * S},
+  ],
+  solucion: ({b, y, z, S}) => {
+    const G = geometria({forma: "trapecial", b, z}, y);
+    return `<ol>
+      <li>A = ${cs(G.A)} m², P = ${cs(G.P)} m, R = ${cs(G.R)} m.</li>
+      <li>τ₀ = γ R S₀ = 9810·${cs(G.R)}·${cs(S)} = <strong>${cs(9810 * G.R * S)} Pa</strong>.</li>
+      <li>En el fondo, τ ≈ γ y S₀ = <strong>${cs(9810 * y * S)} Pa</strong>; en los taludes, cerca de ${cs(0.76 * 9810 * y * S)} Pa.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "¿Se erosiona el canal?",
+  generar: () => ({suelo: elegir(Object.keys(SUELOS)), b: azar(1.5, 6, 0.5), y: azar(0.4, 1.5, 0.1), Q: azar(0.5, 8, 0.5)}),
+  enunciado: ({suelo, b, y, Q}) => `Un canal trapecial en <strong>${suelo.toLowerCase()}</strong> (taludes 2:1, <strong>b = ${cs(b)} m</strong>) conduce <strong>${cs(Q)} m³/s</strong> con <strong>y = ${cs(y)} m</strong>. Calcula la velocidad media y decide si cumple la velocidad máxima permisible de la tabla.`,
+  respuestas: [
+    {etiqueta: "V =", unidad: "m/s", valor: ({b, y, Q}) => Q / ((b + 2 * y) * y)},
+    {etiqueta: "Decisión", opciones: ["cumple", "no cumple"], valor: ({suelo, b, y, Q}) => Q / ((b + 2 * y) * y) <= SUELOS[suelo].V ? "cumple" : "no cumple"},
+  ],
+  solucion: ({suelo, b, y, Q}) => {
+    const V = Q / ((b + 2 * y) * y);
+    return `<ol>
+      <li>A = (b + 2y) y = ${cs((b + 2 * y) * y)} m²; V = Q/A = <strong>${cs(V)} m/s</strong>.</li>
+      <li>Para ${suelo.toLowerCase()}, V_max = ${cs(SUELOS[suelo].V)} m/s: el canal <strong>${V <= SUELOS[suelo].V ? "cumple" : "no cumple"}</strong>.</li>
+    </ol>
+    ${V > SUELOS[suelo].V ? "<p>Opciones: ensanchar el canal, reducir la pendiente con caídas, o revestirlo.</p>" : ""}`;
+  },
+})
+```
+
+## Después de clase
+
+- **Taller de diseño de canales:** diseña un canal revestido y uno en tierra para el mismo caudal y compara excavación y revestimiento.
+- **Tarea 2 en GitHub:** agrega sección óptima y esfuerzo cortante en `corte2.py`.

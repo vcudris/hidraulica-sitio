@@ -1,0 +1,38 @@
+---
+title: "Hidráulica de Canales"
+subtitle: "Ingeniería Ambiental · Unicorsalud · código 25010621"
+toc: false
+---
+
+Este curso estudia el flujo del agua en **canales a cielo abierto**: acequias, canales de riego, colectores pluviales que trabajan parcialmente llenos, quebradas canalizadas y ríos. Aprenderás a calcular el tirante y la velocidad del agua, a reconocer si el flujo es lento (subcrítico) o rápido (supercrítico), a dimensionar un canal que no se erosione ni se sedimente y a predecir cómo sube el nivel aguas arriba de una presa o una compuerta. Son las herramientas para prevenir inundaciones y diseñar obras hidráulicas que protejan el entorno.
+
+**Aprendizajes previos:** Mecánica de Fluidos (continuidad, Bernoulli, cantidad de movimiento), cálculo diferencial e integral y geometría plana.
+
+## Cómo funciona el curso
+
+Cada semana tiene su página con cinco partes:
+
+1. **Antes de clase:** lectura de capítulos concretos de Chow y Mott.
+2. **Ideas clave:** las ecuaciones de la semana, con sus hipótesis y el significado de cada variable.
+3. **Simulador:** cambia el caudal, la pendiente o la forma del canal y mira cómo responde el agua. Todo corre en tu navegador.
+4. **Practica:** ejercicios con datos aleatorios que se verifican al instante. Pide uno nuevo cuantas veces quieras.
+5. **Después de clase:** taller, laboratorio o avance del proyecto integrador.
+
+Además hay una **tarea en GitHub** por corte: programas en Python los cálculos del curso y las pruebas automáticas te dicen qué está bien. Las instrucciones están en [Tareas](tareas.qmd).
+
+## Resultados de aprendizaje
+
+| | Al finalizar el curso podrás… | Semanas |
+|---|---|---|
+| **RA1** | Analizar el flujo en canales aplicando la conservación de masa y energía, y diferenciar los regímenes de flujo con el número de Froude. | [1](semanas/semana-01.qmd) a 5 |
+| **RA2** | Diseñar y evaluar canales erosionables y no erosionables con Manning y Chezy, y usar el principio de momentum para analizar el resalto hidráulico. | [6](semanas/semana-06.qmd) a 10 |
+| **RA3** | Modelar perfiles de flujo gradualmente variado y aplicar criterios de sostenibilidad y prevención de inundaciones en el diseño de canales. | [11](semanas/semana-11.qmd) a 15 |
+
+El texto oficial de cada resultado, el cronograma y la evaluación están en el [Programa](programa.qmd).
+
+## Convenciones del curso
+
+- **Unidades:** Sistema Internacional (m, s, m³/s) y $g = 9{,}81$ m/s². Respuestas finales con **3 cifras significativas**.
+- **Símbolos:** $y$ es el tirante (profundidad del agua medida en vertical desde el fondo), $Q$ el caudal y $S_0$ la pendiente del fondo en m/m. La pendiente del talud se escribe $z{:}1$ (z horizontal por 1 vertical).
+- **Canal prismático:** salvo que se diga otra cosa, la sección y la pendiente no cambian a lo largo del canal, y la pendiente es pequeña ($S_0 < 0{,}1$), así que el tirante vertical y el perpendicular al fondo coinciden.
+- **Dónde preguntar:** en el foro del aula virtual o en las *Discussions* del repositorio del curso.

@@ -1,0 +1,148 @@
+---
+title: "Semana 15 · Canal completo"
+subtitle: "Unidad 3 · Flujo gradualmente variado"
+---
+
+::: {.callout-note appearance="simple"}
+**RA3.** Modelar perfiles de flujo gradualmente variado y aplicar criterios de sostenibilidad ambiental y prevención de riesgos de inundación en el diseño de sistemas hídricos en canales abiertos.
+
+**Lo que debes lograr esta semana.** Integrar todo el curso en un solo canal: compuerta, remanso aguas arriba, perfil M3, resalto y flujo uniforme aguas abajo; y defender el diseño del proyecto integrador.
+
+**Sustentación del proyecto integrador** y cierre del corte 3. Ver [Proyecto integrador](../proyecto.qmd).
+:::
+
+## Antes de clase
+
+- Repasa compuertas ([semana 10](semana-10.qmd)), resalto ([semana 8](semana-08.qmd)) y perfiles ([semana 12](semana-12.qmd)).
+- Chow, cap. 11: problemas prácticos de perfiles con varios controles y ubicación del resalto.
+
+## Ideas clave
+
+**El problema completo.** En un canal largo de pendiente suave con una compuerta:
+
+1. **Aguas arriba** la compuerta represa el agua: el tirante $y_1$ sale de la ecuación de energía entre la sección 1 y la vena contracta, y desde ahí un perfil **M1** sube hacia aguas arriba hasta el tirante normal.
+2. **En la vena contracta** el tirante es $y_{vc} = C_c\,a$, supercrítico.
+3. **Aguas abajo** el chorro se frena por fricción y el tirante crece en un perfil **M3**.
+4. El canal de aguas abajo impone el tirante normal $y_n$. El **resalto** se forma donde el tirante del M3 alcanza el conjugado de $y_n$:
+
+$$
+y_{1}^{*} = \frac{y_n}{2}\left(\sqrt{1 + 8\,Fr_n^2} - 1\right) \qquad Fr_n = \frac{V_n}{\sqrt{g\,y_n}}
+$$
+
+::: {.variables}
+- $y_1^*$: tirante supercrítico que forma resalto con $y_n$ [m] (Bélanger aplicada al revés, canal rectangular).
+- $y_n$, $V_n$, $Fr_n$: tirante, velocidad y Froude del flujo uniforme aguas abajo.
+:::
+
+- Si $y_{vc} < y_1^*$: el M3 crece desde $y_{vc}$ hasta $y_1^*$ y ahí está el resalto (**resalto libre**).
+- Si $y_{vc} \geq y_1^*$: el resalto se corre hasta la compuerta y queda **ahogado**; la descarga deja de ser libre.
+
+## Simulador: compuerta en un canal de pendiente suave
+
+```{ojs}
+import {cs, practica, azar, elegir, resultados, energia, alternos, tiranteNormal, tiranteCritico, conjugado, pasoDirecto, perfilFGV, froude, belanger} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof b = Inputs.range([0.5, 10], {value: 4, step: 0.1, label: "Ancho b (m), canal rectangular"})
+viewof Q = Inputs.range([0.5, 40], {value: 10, step: 0.5, label: "Caudal Q (m³/s)"})
+viewof n = Inputs.range([0.010, 0.035], {value: 0.015, step: 0.001, label: "Rugosidad n"})
+viewof S0 = Inputs.range([0.0001, 0.004], {value: 0.0006, step: 0.0001, label: "Pendiente S₀ (m/m)"})
+viewof a = Inputs.range([0.05, 1.5], {value: 0.4, step: 0.01, label: "Abertura de la compuerta a (m)"})
+```
+
+```{ojs}
+sec = ({forma: "rectangular", b})
+yn = tiranteNormal(sec, Q, n, S0)
+yc = tiranteCritico(sec, Q)
+yvc = 0.61 * a
+y1 = alternos(sec, Q, energia(sec, Q, yvc)).sub
+yAst = yn > yc ? conjugado(sec, Q, yn) : NaN
+estado = !(yn > yc) ? "pendiente fuerte: no hay resalto aguas abajo (perfil S3)"
+  : yvc >= yc ? "la abertura es tan grande que la compuerta no controla el flujo"
+  : yvc >= yAst ? "resalto ahogado contra la compuerta" : "resalto libre aguas abajo"
+m3 = estado === "resalto libre aguas abajo" ? pasoDirecto(sec, Q, n, S0, yvc, yAst, 60) : []
+xj = m3.length ? m3.at(-1).x : 0
+Lj = 6.9 * (yn - yAst)
+arriba = y1 > yn && yn > yc ? perfilFGV(sec, Q, n, S0, y1, 60).puntos : []
+xmax = xj + Lj + Math.max(0.3 * (xj + Lj), 40)
+// El remanso M1 puede medir kilómetros: se dibuja solo un tramo para que se vea el resalto.
+xmin = Math.max(arriba.length ? arriba.at(-1).x : -50, -1.5 * xmax)
+perfilTotal = [
+  ...arriba.slice().reverse(),
+  {x: 0, y: y1},
+  ...m3.map((p) => ({x: p.x + 0.001, y: p.y})),
+  ...d3.range(1, 21).map((i) => ({x: xj + Lj * i / 20, y: yAst + (yn - yAst) * (1 - (1 - i / 20) ** 2.2)})),
+  {x: xmax, y: yn},
+].filter((p) => p.x >= xmin).map((p) => ({...p, fondo: -S0 * p.x, sup: -S0 * p.x + p.y, ynl: -S0 * p.x + yn, ycl: -S0 * p.x + yc}))
+```
+
+```{ojs}
+estado === "resalto libre aguas abajo" ? Plot.plot({
+  height: 340,
+  x: {label: "Distancia desde la compuerta (m)", grid: true, domain: [xmin, xmax]},
+  y: {label: "Cota relativa (m)", grid: true},
+  marks: [
+    Plot.areaY(perfilTotal, {x: "x", y1: "fondo", y2: "sup", fill: "steelblue", fillOpacity: 0.3}),
+    Plot.line(perfilTotal, {x: "x", y: "sup", stroke: "steelblue", strokeWidth: 2.5}),
+    Plot.line(perfilTotal, {x: "x", y: "fondo", stroke: "currentColor", strokeWidth: 2}),
+    Plot.line(perfilTotal, {x: "x", y: "ynl", stroke: "seagreen", strokeDasharray: "6,4"}),
+    Plot.line(perfilTotal, {x: "x", y: "ycl", stroke: "darkorange", strokeDasharray: "6,4"}),
+    Plot.ruleX([0], {stroke: "currentColor", strokeWidth: 4}),
+    Plot.text([{x: xj + Lj / 2, y: -S0 * xj + yn * 1.15}], {x: "x", y: "y", text: () => "resalto", fill: "firebrick"}),
+  ],
+  caption: "M1 aguas arriba, compuerta, M3, resalto y flujo uniforme. Verde: yn; naranja: yc. Escala vertical exagerada.",
+}) : html`<p><strong>${estado}.</strong> Cambia la abertura, el caudal o la pendiente para ver el perfil completo.</p>`
+```
+
+```{ojs}
+resultados([
+  ["Tirante normal, yn", cs(yn), "m", yn > yc ? "pendiente suave" : "pendiente fuerte"],
+  ["Tirante crítico, yc", cs(yc), "m"],
+  ["Tirante aguas arriba de la compuerta, y₁", cs(y1), "m", Number.isFinite(y1) && y1 > yn ? `sobreelevación ${cs(y1 - yn)} m (perfil M1)` : ""],
+  ["Longitud del remanso M1 (hasta 1 % de yn)", arriba.length ? cs(Math.abs(arriba.at(-1).x)) : "—", "m", "el gráfico muestra solo el tramo cercano a la compuerta"],
+  ["Vena contracta, y_vc = 0,61 a", cs(yvc), "m", `Fr = ${cs(froude(sec, Q, yvc))}`],
+  ["Conjugado de yn, y₁*", cs(yAst), "m"],
+  ["Estado", estado, ""],
+  ["Distancia de la compuerta al resalto", m3.length ? cs(xj) : "—", "m", "longitud del perfil M3"],
+  ["Longitud del resalto ≈ 6,9 (yn − y₁*)", m3.length ? cs(Lj) : "—", "m"],
+  ["Zona a proteger aguas abajo", m3.length ? cs(xj + Lj) : "—", "m", "revestimiento o tanque amortiguador"],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Cierra la compuerta poco a poco. ¿El resalto se acerca o se aleja de ella? ¿En qué abertura se ahoga?
+2. Aumenta la rugosidad aguas abajo. ¿Qué pasa con $y_n$, con $y_1^*$ y con la posición del resalto?
+3. Para tu proyecto: ¿qué longitud de revestimiento necesitas aguas abajo de la compuerta con el caudal de diseño?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "¿Dónde está el resalto?",
+  generar: () => ({q: azar(1, 5, 0.25), n: elegir([0.013, 0.015]), S: elegir([0.0004, 0.0006, 0.001]), f: elegir([azar(0.4, 0.9, 0.05), azar(1.1, 1.4, 0.05)])}),
+  enunciado: ({q, n, S, f}) => {
+    const s = {forma: "rectangular", b: 1}, yn = tiranteNormal(s, q, n, S), yA = conjugado(s, q, yn), yvc = Number((f * yA).toPrecision(3));
+    return `Un canal rectangular muy ancho de pendiente suave lleva <strong>q = ${cs(q)} m²/s</strong> con tirante normal <strong>${cs(yn)} m</strong>. Una compuerta produce una vena contracta de <strong>${cs(yvc)} m</strong>. Calcula el conjugado y₁* del tirante normal y decide qué pasa.`;
+  },
+  respuestas: [
+    {etiqueta: "y₁* =", unidad: "m", valor: ({q, n, S}) => { const yn = Number(tiranteNormal({forma: "rectangular", b: 1}, q, n, S).toPrecision(3)); return belanger(yn, q / (yn * Math.sqrt(9.81 * yn))); }},
+    {etiqueta: "Resultado", opciones: ["resalto libre aguas abajo", "resalto ahogado contra la compuerta"], valor: ({f}) => f < 1 ? "resalto libre aguas abajo" : "resalto ahogado contra la compuerta"},
+  ],
+  solucion: ({q, n, S, f}) => {
+    const yn = Number(tiranteNormal({forma: "rectangular", b: 1}, q, n, S).toPrecision(3)), Fr = q / (yn * Math.sqrt(9.81 * yn)), yA = belanger(yn, Fr);
+    const yvc = Number((f * conjugado({forma: "rectangular", b: 1}, q, tiranteNormal({forma: "rectangular", b: 1}, q, n, S))).toPrecision(3));
+    return `<ol>
+      <li>Fr_n = q/(y_n √(g y_n)) = ${cs(Fr)}.</li>
+      <li>y₁* = (y_n/2)(√(1 + 8 Fr_n²) − 1) = <strong>${cs(yA)} m</strong>.</li>
+      <li>y_vc = ${cs(yvc)} m ${f < 1 ? "<" : "≥"} y₁*: <strong>${f < 1 ? "el chorro crece en un M3 hasta y₁* y ahí forma un resalto libre" : "el resalto se ahoga contra la compuerta"}</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Sustentación del proyecto integrador:** informe técnico y defensa oral.
+- **Pruebas finales** en la semana 16.

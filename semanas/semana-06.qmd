@@ -1,0 +1,210 @@
+---
+title: "Semana 6 · Flujo uniforme: Manning y Chezy"
+subtitle: "Unidad 2 · Flujo uniforme y resalto"
+---
+
+::: {.callout-note appearance="simple"}
+**RA2.** Diseñar y evaluar canales erosionables y no erosionables aplicando las ecuaciones de flujo uniforme (Manning y Chezy) y el principio de momentum, incluyendo el análisis del resalto hidráulico como disipador de energía.
+
+**Lo que debes lograr esta semana.** Calcular el caudal que conduce un canal con un tirante dado y, al revés, el tirante normal para un caudal dado, con las ecuaciones de Manning y Chezy.
+:::
+
+## Antes de clase
+
+- Chow, cap. 5, *Desarrollo del flujo uniforme y sus ecuaciones*, y cap. 6, *Cálculo del flujo uniforme*.
+- Mott y Untener, cap. 14: numeral 14.4 (flujo estable uniforme en canales abiertos).
+
+## Ideas clave
+
+**Flujo uniforme.** El tirante, el área y la velocidad son los mismos en todas las secciones. La componente del peso que empuja el agua cuesta abajo se equilibra con la fricción en el contorno, y las tres pendientes coinciden:
+
+$$
+S_0 = S_w = S_f
+$$
+
+::: {.variables}
+- $S_0$: pendiente del fondo [m/m].
+- $S_w$: pendiente de la superficie del agua [m/m].
+- $S_f$: pendiente de la línea de energía, o de fricción [m/m].
+:::
+
+El tirante con el que esto ocurre se llama **tirante normal**, $y_n$. En un canal largo y prismático, lejos de compuertas, caídas o cambios de pendiente, el flujo tiende a $y_n$.
+
+**Ecuación de Chezy.** Del equilibrio de fuerzas sobre un volumen de agua:
+
+$$
+V = C\,\sqrt{R\,S}
+$$
+
+::: {.variables}
+- $V$: velocidad media [m/s].
+- $C$: coeficiente de Chezy [m^1/2/s].
+- $R$: radio hidráulico [m].
+- $S$: pendiente de fricción; en flujo uniforme, $S = S_0$ [m/m].
+:::
+
+**Ecuación de Manning (SI).** Es la más usada; equivale a Chezy con $C = R^{1/6}/n$:
+
+$$
+V = \frac{1}{n}\,R^{2/3}\,S^{1/2} \qquad Q = \frac{1}{n}\,A\,R^{2/3}\,S^{1/2}
+$$
+
+::: {.variables}
+- $n$: coeficiente de rugosidad de Manning [s/m^1/3]; depende del material, la vegetación, la forma y el mantenimiento del canal.
+- $Q$: caudal [m³/s]; $A$: área mojada [m²].
+:::
+
+**Tirante normal.** El **factor de sección** $A R^{2/3}$ depende solo de la geometría y del tirante:
+
+$$
+A\,R^{2/3} = \frac{n\,Q}{\sqrt{S_0}}
+$$
+
+En una sección rectangular o trapecial no hay despeje directo: se resuelve por tanteo, con la calculadora o con un programa (tarea 2).
+
+| Material del canal | $n$ |
+|---|---|
+| PVC o plástico | 0,010 |
+| Concreto con llana | 0,013 |
+| Concreto sin pulir | 0,015 |
+| Mampostería de piedra con mortero | 0,025 |
+| Tierra recta y uniforme, limpia | 0,022 |
+| Tierra con pasto corto | 0,027 |
+| Tierra con vegetación densa | 0,040 |
+| Cauce natural con piedras y maleza | 0,040 |
+
+Valores de diseño usuales tomados de la tabla de Chow; el libro da rangos mínimo, normal y máximo.
+
+**Hipótesis:** flujo permanente, uniforme y turbulento rugoso, canal prismático de pendiente pequeña.
+
+## Simulador: tirante normal
+
+```{ojs}
+import {practica, azar, elegir, cs, resultados, geometria, froude, regimen, tiranteNormal, tiranteCritico, caudalManning, chezy, RUGOSIDAD, dibujarSeccion} from "../recursos/hc.js"
+```
+
+```{ojs}
+viewof forma = Inputs.radio(["rectangular", "trapecial", "triangular", "circular"], {value: "trapecial", label: "Forma"})
+viewof b = Inputs.range([0.3, 10], {value: 3, step: 0.1, label: "Ancho de fondo b (m)"})
+viewof z = Inputs.range([0, 3], {value: 1.5, step: 0.25, label: "Talud z (z:1)"})
+viewof D0 = Inputs.range([0.3, 3], {value: 1.2, step: 0.05, label: "Diámetro D₀ (m)"})
+viewof material = Inputs.select(Object.keys(RUGOSIDAD), {value: "Concreto sin pulir", label: "Material"})
+viewof Q = Inputs.range([0.05, 50], {value: 12, step: 0.05, label: "Caudal Q (m³/s)"})
+viewof S0 = Inputs.range([0.0001, 0.03], {value: 0.0008, step: 0.0001, label: "Pendiente S₀ (m/m)"})
+```
+
+```{ojs}
+sec = ({forma, b, z, D: D0})
+n = RUGOSIDAD[material]
+yn = tiranteNormal(sec, Q, n, S0)
+yc = tiranteCritico(sec, Q)
+Gn = geometria(sec, yn)
+Frn = froude(sec, Q, yn)
+yMaxCurva = forma === "circular" ? 0.999 * D0 : Math.max(2 * yn, 1)
+curvaQ = d3.range(1, 151).map((i) => ({y: yMaxCurva * i / 150})).map((p) => ({...p, Q: caudalManning(sec, n, S0, p.y)}))
+```
+
+```{ojs}
+Number.isFinite(yn)
+  ? dibujarSeccion(sec, yn, {marcas: [{y: yc, clase: "critico", texto: "yc"}]})
+  : html`<p><em>El conducto no puede llevar ese caudal con esta pendiente: trabajaría a presión. Aumenta el diámetro o la pendiente.</em></p>`
+```
+
+```{ojs}
+Plot.plot({
+  height: 260,
+  x: {label: "Caudal Q (m³/s)", grid: true},
+  y: {label: "Tirante y (m)", grid: true},
+  marks: [
+    Plot.line(curvaQ, {x: "Q", y: "y", stroke: "steelblue", strokeWidth: 2}),
+    Number.isFinite(yn) ? Plot.dot([{Q, y: yn}], {x: "Q", y: "y", r: 6, fill: "seagreen"}) : null,
+    Plot.ruleX([Q], {stroke: "gray", strokeDasharray: "4,4"}),
+  ],
+  caption: "Curva de descarga en flujo uniforme: caudal que pasa con cada tirante. El punto verde es el tirante normal.",
+})
+```
+
+```{ojs}
+resultados([
+  ["Rugosidad, n", cs(n), "s/m^1/3"],
+  ["Tirante normal, yn", cs(yn), "m"],
+  ["Área y radio hidráulico", `${cs(Gn.A)} · ${cs(Gn.R)}`, "m² · m"],
+  ["Velocidad media, V", cs(Q / Gn.A), "m/s"],
+  ["Coeficiente de Chezy, C = R^(1/6)/n", cs(chezy(Gn.R, n)), "m^1/2/s"],
+  ["Froude con yn", cs(Frn), "", regimen(Frn)],
+  ["Tirante crítico, yc", cs(yc), "m", Number.isFinite(yn) ? (yn > yc ? "pendiente suave (yn > yc)" : "pendiente fuerte (yn < yc)") : ""],
+])
+```
+
+**Preguntas para explorar:**
+
+1. Cambia de concreto a tierra con vegetación densa. ¿Cuánto sube el tirante normal? ¿Y la velocidad?
+2. ¿Con qué pendiente el tirante normal es igual al crítico? Esa es la pendiente crítica de la [semana 3](semana-03.qmd).
+3. En la circular, busca el caudal máximo: ocurre antes de que el tubo se llene (cerca de $0{,}94\,D_0$). ¿Por qué el tubo lleno conduce menos?
+
+## Practica
+
+```{ojs}
+practica({
+  titulo: "Caudal con la ecuación de Manning",
+  generar: () => ({b: azar(1, 5, 0.5), y: azar(0.5, 2, 0.1), n: elegir([0.013, 0.015, 0.022, 0.025]), S: elegir([0.0005, 0.001, 0.002, 0.004])}),
+  enunciado: ({b, y, n, S}) => `Un canal rectangular de <strong>${cs(b)} m</strong> de ancho, con <strong>n = ${cs(n)}</strong> y pendiente <strong>S₀ = ${cs(S)}</strong>, trabaja en flujo uniforme con <strong>y = ${cs(y)} m</strong>. Calcula el radio hidráulico, la velocidad y el caudal.`,
+  respuestas: [
+    {etiqueta: "R =", unidad: "m", valor: ({b, y}) => b * y / (b + 2 * y)},
+    {etiqueta: "V =", unidad: "m/s", valor: ({b, y, n, S}) => Math.pow(b * y / (b + 2 * y), 2 / 3) * Math.sqrt(S) / n},
+    {etiqueta: "Q =", unidad: "m³/s", valor: ({b, y, n, S}) => b * y * Math.pow(b * y / (b + 2 * y), 2 / 3) * Math.sqrt(S) / n},
+  ],
+  solucion: ({b, y, n, S}) => {
+    const A = b * y, R = A / (b + 2 * y), V = Math.pow(R, 2 / 3) * Math.sqrt(S) / n;
+    return `<ol>
+      <li>A = b y = ${cs(A)} m²; P = b + 2y = ${cs(b + 2 * y)} m; R = A/P = <strong>${cs(R)} m</strong>.</li>
+      <li>V = R^(2/3) S^(1/2)/n = ${cs(Math.pow(R, 2 / 3), 4)}·${cs(Math.sqrt(S), 4)}/${cs(n)} = <strong>${cs(V)} m/s</strong>.</li>
+      <li>Q = V A = <strong>${cs(V * A)} m³/s</strong>.</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Tirante normal en un canal trapecial",
+  generar: () => ({b: azar(1, 4, 0.5), z: elegir([1, 1.5, 2]), Q: azar(2, 20, 1), n: elegir([0.014, 0.015, 0.022]), S: elegir([0.0005, 0.001, 0.0015])}),
+  enunciado: ({b, z, Q, n, S}) => `Un canal trapecial con <strong>b = ${cs(b)} m</strong>, taludes <strong>${cs(z)}:1</strong>, <strong>n = ${cs(n)}</strong> y <strong>S₀ = ${cs(S)}</strong> debe conducir <strong>${cs(Q)} m³/s</strong>. Calcula el factor de sección requerido y el tirante normal.`,
+  respuestas: [
+    {etiqueta: "A R^(2/3) =", unidad: "m^8/3", valor: ({Q, n, S}) => n * Q / Math.sqrt(S)},
+    {etiqueta: "yn =", unidad: "m", valor: ({b, z, Q, n, S}) => tiranteNormal({forma: "trapecial", b, z}, Q, n, S)},
+  ],
+  solucion: ({b, z, Q, n, S}) => {
+    const s = {forma: "trapecial", b, z}, yn = tiranteNormal(s, Q, n, S), G = geometria(s, yn);
+    return `<ol>
+      <li>Factor de sección requerido: n Q/√S₀ = ${cs(n)}·${cs(Q)}/√${cs(S)} = <strong>${cs(n * Q / Math.sqrt(S))}</strong>.</li>
+      <li>Prueba valores de y en A R^(2/3), con A = (b + z y) y y P = b + 2y√(1 + z²), hasta igualar ese número.</li>
+      <li>Con <strong>yn = ${cs(yn)} m</strong>: A = ${cs(G.A)} m², R = ${cs(G.R)} m y A R^(2/3) = ${cs(G.A * Math.pow(G.R, 2 / 3))}. ✔</li>
+    </ol>`;
+  },
+})
+```
+
+```{ojs}
+practica({
+  titulo: "Coeficiente de Chezy",
+  generar: () => ({R: azar(0.3, 2.5, 0.05), n: elegir([0.012, 0.015, 0.025, 0.035]), S: elegir([0.0004, 0.001, 0.003])}),
+  enunciado: ({R, n, S}) => `Un canal tiene radio hidráulico <strong>R = ${cs(R)} m</strong>, rugosidad <strong>n = ${cs(n)}</strong> y pendiente <strong>S = ${cs(S)}</strong>. Calcula el coeficiente C de Chezy equivalente y la velocidad media.`,
+  respuestas: [
+    {etiqueta: "C =", unidad: "m^1/2/s", valor: ({R, n}) => Math.pow(R, 1 / 6) / n},
+    {etiqueta: "V =", unidad: "m/s", valor: ({R, n, S}) => Math.pow(R, 1 / 6) / n * Math.sqrt(R * S)},
+  ],
+  solucion: ({R, n, S}) => {
+    const C = Math.pow(R, 1 / 6) / n;
+    return `<ol>
+      <li>C = R^(1/6)/n = ${cs(Math.pow(R, 1 / 6), 4)}/${cs(n)} = <strong>${cs(C)} m^1/2/s</strong>.</li>
+      <li>V = C √(R S) = ${cs(C, 4)}·√(${cs(R)}·${cs(S)}) = <strong>${cs(C * Math.sqrt(R * S))} m/s</strong>; da lo mismo que Manning.</li>
+    </ol>`;
+  },
+})
+```
+
+## Después de clase
+
+- **Taller de flujo uniforme:** tirante normal en secciones trapeciales y circulares; caudal máximo de un colector.
+- **Tarea 2 en GitHub:** empieza `corte2.py` con Manning, Chezy y tirante normal.
