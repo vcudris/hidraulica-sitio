@@ -5,6 +5,7 @@ subtitle: "Todos corren en tu navegador: no instalas nada y no se envían datos 
 
 | Simulador | Qué explorar | Unidad | Semana |
 |---|---|---|---|
+| Parámetros de cada sección | Las cuatro secciones a escala con $A$, $P$, $T$, $y$, $b$, $z$, $D_0$ y $\theta$ señalados; resalta uno a la vez | U1 | [1](semanas/semana-01.qmd#simulador-parámetros-de-cada-sección) |
 | Sección del canal | $A$, $P$, $T$, $R$, $D$ de secciones rectangular, trapecial, triangular y circular, dibujadas a escala; Reynolds | U1 | [1](semanas/semana-01.qmd#simulador-sección-del-canal) |
 | Curva de energía específica | Curva $E$-$y$, tirante crítico, tirantes alternos y Froude de cada rama | U1 | [2](semanas/semana-02.qmd#simulador-curva-de-energía-específica) |
 | Tirante crítico y régimen | $y_c$ en cualquier sección, Froude en función del tirante, caso del colector circular al 60 % | U1 | [3](semanas/semana-03.qmd#simulador-tirante-crítico-y-régimen) |

@@ -103,3 +103,30 @@ table.resultados td.nota { color: var(--bs-secondary-color); font-size: 0.9em; }
   .practica-fila { grid-template-columns: 1fr 7rem max-content; }
   .practica-estado { grid-column: 1 / -1; }
 }
+
+/* Parámetros geométricos señalados (recursos/hc.js → dibujarParametros). */
+.parametros-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; margin: 0.75rem 0 1rem; }
+.parametro-card { border: 1px solid var(--bs-border-color); border-radius: 0.5rem; padding: 0.75rem; min-width: 0; }
+.parametro-card h4 { font-size: 1rem; margin: 0 0 0.25rem; }
+.parametro-card table { width: 100%; font-size: 0.85em; margin: 0; }
+.parametro-card td { padding: 0.1rem 0.3rem; vertical-align: top; }
+.parametro-card td.valor { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.parametro-card tr.activo { font-weight: 700; background: var(--bs-tertiary-bg); }
+.parametros { width: 100%; height: auto; display: block; }
+.parametros .contorno { stroke: currentColor; stroke-width: 2.5; fill: none; stroke-linejoin: round; }
+.parametros .agua { fill: color-mix(in srgb, steelblue 30%, transparent); }
+.parametros .perimetro { stroke: firebrick; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.parametros .ancho { stroke: darkorange; stroke-width: 1.5; }
+.parametros .tirante { stroke: seagreen; stroke-width: 1.5; }
+.parametros .base { stroke: currentColor; stroke-width: 1; }
+.parametros .talud, .parametros .theta { stroke: mediumpurple; stroke-width: 1.5; fill: none; }
+.parametros .theta { stroke-dasharray: 4 3; }
+.parametros .equivalente { fill: none; stroke: steelblue; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.esquema text.t-perimetro { fill: firebrick; }
+.esquema text.t-ancho { fill: darkorange; }
+.esquema text.t-tirante { fill: seagreen; }
+.esquema text.t-talud, .esquema text.t-theta { fill: mediumpurple; }
+.parametros g.tenue { opacity: 0.2; }
+.parametros g.activo .perimetro { stroke-width: 5.5; }
+.parametros g.activo .agua { fill: color-mix(in srgb, steelblue 55%, transparent); }
+.parametros g.activo text { font-weight: 700; }

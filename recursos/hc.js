@@ -403,6 +403,101 @@ function cota(x, y1, y2, texto) {
     <text x="${x + 6}" y="${(y1 + y2) / 2 + 4}">${texto}</text>`;
 }
 
+// Cota horizontal con topes entre x1 y x2, con el texto encima (dy < 0) o debajo (dy > 0).
+function cotaH(x1, x2, y, texto, clase, dy = -6) {
+  return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" class="${clase}"/>
+    <line x1="${x1}" y1="${y - 4}" x2="${x1}" y2="${y + 4}" class="${clase}"/>
+    <line x1="${x2}" y1="${y - 4}" x2="${x2}" y2="${y + 4}" class="${clase}"/>
+    <text x="${(x1 + x2) / 2}" y="${y + dy + (dy > 0 ? 6 : 0)}" text-anchor="middle" class="t-${clase}">${texto}</text>`;
+}
+
+// Qué elementos del dibujo se resaltan con cada opción del selector de parámetros.
+const RESALTA = {
+  A: ["A"], P: ["P"], T: ["T"], y: ["y"],
+  R: ["A", "P"], D: ["A", "T", "D"], datos: ["b", "z", "D0", "theta"],
+};
+
+// Corte transversal a escala con sus elementos geométricos señalados:
+// A (área mojada), P (perímetro mojado), T (ancho superficial), y (tirante), b (ancho de fondo),
+// z (talud), D₀ y θ (circular). `destacar` es una clave de RESALTA o "" para verlos todos.
+export function dibujarParametros(s, y, destacar = "") {
+  const svg = document.createElementNS(SVGNS, "svg");
+  svg.setAttribute("viewBox", "0 0 320 250");
+  svg.setAttribute("class", "esquema parametros");
+  svg.setAttribute("role", "img");
+  const activos = RESALTA[destacar] || [];
+  const grupo = (k, contenido) => {
+    const estado = !destacar ? "" : activos.includes(k) ? " activo" : " tenue";
+    return `<g class="p-${k}${estado}">${contenido}</g>`;
+  };
+  const izq = 72, der = 72, arriba = 42, abajo = 46;
+  const W = 320 - izq - der, H = 250 - arriba - abajo;
+  const cx = izq + W / 2, fondo = arriba + H;
+  const G = geometria(s, y);
+  let partes = "", tope = 0, base = 250;
+
+  if (s.forma === "circular") {
+    const D = s.D, k = Math.min(W, H) / D, r = (D / 2) * k, cy = fondo - r;
+    const yy = Math.min(y, D * 0.99);
+    const nivel = fondo - yy * k;
+    const w = Math.sqrt(Math.max(r * r - (cy - nivel) ** 2, 0));
+    const grande = yy > D / 2 ? 1 : 0;
+    const arco = `M${cx - w},${nivel} A${r},${r} 0 ${grande} 0 ${cx + w},${nivel}`;
+    partes += `<circle cx="${cx}" cy="${cy}" r="${r}" class="contorno"/>`;
+    partes += grupo("A", `<path d="${arco} Z" class="agua"/>
+      <text x="${cx}" y="${fondo - 12}" text-anchor="middle" class="t-agua">A = ${cs(G.A)} m²</text>`);
+    partes += grupo("P", `<path d="${arco}" class="perimetro"/>
+      <text x="${cx - r - 6}" y="${fondo - 6}" text-anchor="end" class="t-perimetro">P = ${cs(G.P)} m</text>`);
+    partes += grupo("T", cotaH(cx - w, cx + w, nivel - 10, `T = ${cs(G.T)} m`, "ancho"));
+    partes += grupo("y", cota(cx + r + 14, fondo, nivel, `y = ${cs(yy)} m`).replaceAll('class="cota"', 'class="tirante"').replace("<text ", '<text class="t-tirante" '));
+    partes += grupo("D0", cotaH(cx - r, cx + r, fondo + 16, `D₀ = ${cs(D)} m`, "base", 8));
+    // Ángulo central θ: radios a los extremos de la superficie y arco por debajo del centro.
+    const u = 18, ux = w / r, uy = (nivel - cy) / r;
+    partes += grupo("theta", `<line x1="${cx}" y1="${cy}" x2="${cx - w}" y2="${nivel}" class="theta"/>
+      <line x1="${cx}" y1="${cy}" x2="${cx + w}" y2="${nivel}" class="theta"/>
+      <path d="M${cx - u * ux},${cy + u * uy} A${u},${u} 0 ${grande} 0 ${cx + u * ux},${cy + u * uy}" class="theta"/>
+      <text x="${cx}" y="${cy + u + 14}" text-anchor="middle" class="t-theta">θ = ${cs(G.theta)} rad</text>`);
+    if (destacar === "D") {
+      partes += `<rect x="${cx - G.T * k / 2}" y="${nivel}" width="${G.T * k}" height="${G.Dh * k}" class="equivalente"/>`;
+    }
+    tope = Math.min(cy - r, nivel - 24) - 6;
+    base = fondo + 36;
+  } else {
+    const b = s.forma === "triangular" ? 0 : s.b;
+    const z = s.forma === "rectangular" ? 0 : s.z;
+    const Hd = y * 1.4;
+    const Ttop = b + 2 * z * Hd;
+    const k = Math.min(W / Math.max(Ttop, 1e-6), H / Hd);
+    const X = (u) => cx + u * k, Y = (v) => fondo - v * k;
+    const T = b + 2 * z * y;
+    partes += `<path d="M${X(-Ttop / 2)},${Y(Hd)} L${X(-b / 2)},${Y(0)} L${X(b / 2)},${Y(0)} L${X(Ttop / 2)},${Y(Hd)}" class="contorno"/>`;
+    partes += grupo("A", `<path d="M${X(-T / 2)},${Y(y)} L${X(-b / 2)},${Y(0)} L${X(b / 2)},${Y(0)} L${X(T / 2)},${Y(y)} Z" class="agua"/>
+      <text x="${cx}" y="${Y(y * (b > 0 ? 0.45 : 0.6))}" text-anchor="middle" class="t-agua">A = ${cs(G.A)} m²</text>`);
+    partes += grupo("P", `<path d="M${X(-T / 2)},${Y(y)} L${X(-b / 2)},${Y(0)} L${X(b / 2)},${Y(0)} L${X(T / 2)},${Y(y)}" class="perimetro"/>
+      <text x="${X(-Ttop / 2) - 6}" y="${Y(y / 2) + 4}" text-anchor="end" class="t-perimetro">P = ${cs(G.P)} m</text>`);
+    partes += grupo("T", cotaH(X(-T / 2), X(T / 2), Y(y) - 10, `T = ${cs(T)} m`, "ancho"));
+    partes += grupo("y", cota(X(Ttop / 2) + 14, Y(0), Y(y), `y = ${cs(y)} m`).replaceAll('class="cota"', 'class="tirante"').replace("<text ", '<text class="t-tirante" '));
+    if (b > 0) partes += grupo("b", cotaH(X(-b / 2), X(b / 2), Y(0) + 14, `b = ${cs(b)} m`, "base", 8));
+    if (z > 0) {
+      // Triángulo del talud sobre la pared derecha: 1 vertical por z horizontal.
+      const h0 = 0.15 * Hd, v = 0.3 * Hd;
+      const p1 = [X(b / 2 + z * h0), Y(h0)], p2 = [X(b / 2 + z * (h0 + v)), Y(h0 + v)];
+      partes += grupo("z", `<path d="M${p1[0]},${p1[1]} L${p2[0]},${p1[1]} L${p2[0]},${p2[1]}" class="talud"/>
+        <text x="${(p1[0] + p2[0]) / 2}" y="${p1[1] + 13}" text-anchor="middle" class="t-talud">z = ${cs(z, 2)}</text>
+        <text x="${p2[0] + 5}" y="${(p1[1] + p2[1]) / 2 + 4}" class="t-talud">1</text>`);
+    }
+    if (destacar === "D") {
+      partes += `<rect x="${X(-T / 2)}" y="${Y(y)}" width="${T * k}" height="${G.Dh * k}" class="equivalente"/>`;
+    }
+    tope = Math.min(Y(Hd), Y(y) - 24) - 6;
+    base = fondo + (b > 0 ? 30 : 18);
+  }
+  // Recorta el lienzo al contenido para que no quede espacio vacío arriba.
+  svg.setAttribute("viewBox", `0 ${tope} 320 ${base - tope}`);
+  svg.innerHTML = partes;
+  return svg;
+}
+
 // ---------- Componentes de la página ----------
 
 function nodo(etiqueta, clase, html) {

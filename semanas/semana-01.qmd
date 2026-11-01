@@ -66,11 +66,74 @@ $$
 
 Con esta definición (Chow), el flujo es laminar si $Re < 500$ y turbulento si $Re > 2000$. Casi todos los canales reales son turbulentos.
 
-## Simulador: sección del canal
+## Simulador: parámetros de cada sección
+
+Las cuatro secciones del curso, dibujadas a escala con el mismo tirante. Elige un parámetro para resaltarlo en todas a la vez y compara cómo se mide en cada forma.
 
 ```{ojs}
-import {practica, azar, elegir, cs, resultados, geometria, reynolds, regimenViscoso, dibujarSeccion} from "../recursos/hc.js"
+import {practica, azar, elegir, cs, resultados, geometria, reynolds, regimenViscoso, dibujarSeccion, dibujarParametros} from "../recursos/hc.js"
 ```
+
+```{ojs}
+viewof destacar = Inputs.radio(
+  new Map([
+    ["Todos", ""], ["A · área mojada", "A"], ["P · perímetro mojado", "P"], ["T · ancho superficial", "T"],
+    ["y · tirante", "y"], ["R = A/P", "R"], ["D = A/T", "D"], ["Datos de la forma (b, z, D₀, θ)", "datos"],
+  ]),
+  {value: "", label: "Resaltar"}
+)
+viewof py = Inputs.range([0.1, 1.5], {value: 0.8, step: 0.01, label: "Tirante y (m)"})
+viewof pb = Inputs.range([0.5, 4], {value: 2, step: 0.1, label: "Ancho de fondo b (m), rectangular y trapecial"})
+viewof pz = Inputs.range([0.25, 3], {value: 1, step: 0.25, label: "Talud z (z:1), trapecial y triangular"})
+viewof pD = Inputs.range([0.5, 3], {value: 1.4, step: 0.05, label: "Diámetro D₀ (m), circular"})
+```
+
+```{ojs}
+secciones = [
+  {nombre: "Rectangular", s: {forma: "rectangular", b: pb},
+   f: {A: "b·y", P: "b + 2y", T: "b"}},
+  {nombre: "Trapecial", s: {forma: "trapecial", b: pb, z: pz},
+   f: {A: "(b + z·y)·y", P: "b + 2y√(1 + z²)", T: "b + 2z·y"}},
+  {nombre: "Triangular", s: {forma: "triangular", z: pz},
+   f: {A: "z·y²", P: "2y√(1 + z²)", T: "2z·y"}},
+  {nombre: "Circular", s: {forma: "circular", D: pD},
+   f: {A: "D₀²(θ − sen θ)/8", P: "θ·D₀/2", T: "D₀·sen(θ/2)"}},
+]
+filasParametros = (sec, f, yy) => {
+  const G = geometria(sec.s, yy);
+  return [
+    ["A", "Área mojada", f.A, G.A, "m²"],
+    ["P", "Perímetro mojado", f.P, G.P, "m"],
+    ["T", "Ancho superficial", f.T, G.T, "m"],
+    ["R", "Radio hidráulico", "A/P", G.R, "m"],
+    ["D", "Profundidad hidráulica", "A/T", G.Dh, "m"],
+  ];
+}
+html`<div class="parametros-grid">${secciones.map((sec) => {
+  const yy = sec.s.forma === "circular" ? Math.min(py, 0.95 * pD) : py;
+  const G = geometria(sec.s, yy);
+  return html`<div class="parametro-card">
+    <h4>${sec.nombre}</h4>
+    ${dibujarParametros(sec.s, yy, destacar)}
+    <table>
+      ${filasParametros(sec, sec.f, yy).map(([k, nombre, formula, valor, unidad]) => html`<tr class=${destacar === k || (destacar === "R" && k === "R") ? "activo" : ""}>
+        <td><strong>${k}</strong></td><td>${formula}</td><td class="valor">${cs(valor)} ${unidad}</td></tr>`)}
+      ${sec.s.forma === "circular" ? html`<tr class=${destacar === "datos" ? "activo" : ""}><td><strong>θ</strong></td><td>2 arccos(1 − 2y/D₀)</td><td class="valor">${cs(G.theta)} rad</td></tr>` : ""}
+    </table>
+    ${sec.s.forma === "circular" && py > 0.95 * pD ? html`<p class="practica-ayuda">El tirante se limitó al 95 % del diámetro.</p>` : ""}
+  </div>`;
+})}</div>`
+```
+
+Colores: <span style="color: steelblue">■</span> área mojada, <span style="color: firebrick">■</span> perímetro mojado (solo el contorno que toca el agua), <span style="color: darkorange">■</span> ancho superficial, <span style="color: seagreen">■</span> tirante y <span style="color: mediumpurple">■</span> talud y ángulo central. Al resaltar $D = A/T$, el rectángulo punteado tiene ancho $T$ y la misma área que el agua: su altura es la profundidad hidráulica.
+
+**Preguntas para explorar:**
+
+1. Con el mismo tirante, ¿qué sección tiene el mayor radio hidráulico? ¿Cuál "desperdicia" más perímetro?
+2. Resalta $P$ y sube el talud $z$ de la trapecial. ¿Qué crece más rápido, el área o el perímetro?
+3. En la circular, ¿en qué tirante $T$ es máximo? ¿Qué le pasa a $D = A/T$ cerca del tubo lleno?
+
+## Simulador: sección del canal
 
 ```{ojs}
 viewof forma = Inputs.radio(["rectangular", "trapecial", "triangular", "circular"], {value: "trapecial", label: "Forma"})
